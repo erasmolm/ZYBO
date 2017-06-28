@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
 
 entity gpio_custom_IPCore_v1_0_S00_AXI is
 	generic (
@@ -138,6 +139,7 @@ architecture arch_imp of gpio_custom_IPCore_v1_0_S00_AXI is
     
     signal periph_read    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
     signal periph_isr    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+    signal temp_periph_isr    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
     signal temp_isr    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
     signal temp_s_out    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
     signal temp_int    :std_logic := '0';
@@ -420,15 +422,8 @@ begin
 	end process;
 
 
-	-- Add user logic here
-    int_proc: process(periph_isr,temp_int) is
-    begin
-       for i in width-1 downto 0 loop
-           temp_int <= periph_isr(i) or temp_int;
-       end loop;
-    end process;
-    
-    gpio_int <= temp_int;
+	-- Il segnale gpio_int è ottenuto mediante la OR di tutti i bit del registro ISR (periph_isr)
+    gpio_int <= or_reduce(periph_isr);
     
     --Questo 
     michele: process(periph_isr,slv_reg4,temp_isr,S_AXI_ACLK) is
@@ -436,20 +431,20 @@ begin
     
     if (rising_edge (S_AXI_ACLK)) then
         if ( S_AXI_ARESETN = '0' ) then
-            periph_isr <= (others => '0');
+            temp_periph_isr <= (others => '0');
         else
             for k in width-1 downto 0 loop
                 if(periph_isr(k) = '1') then
                        if(slv_reg4(k) = '1') then
-                           periph_isr(k) <= '0';
+                           temp_periph_isr(k) <= '0';
                        else
-                           periph_isr(k) <= periph_isr(k);
+                           temp_periph_isr(k) <= periph_isr(k);
                        end if;
                 else
                        if(temp_isr(k) = '1') then
-                           periph_isr(k) <= '1';
+                           temp_periph_isr(k) <= '1';
                        else
-                           periph_isr(k) <= periph_isr(k);
+                           temp_periph_isr(k) <= periph_isr(k);
                        end if;
                 end if;
             end loop;
@@ -458,6 +453,9 @@ begin
     
     end process;
     
+    --registro di retroazione per evitare loop combinatorio
+    periph_isr <= temp_periph_isr;
+
     --Se la direzione è in scrittura (slv_reg1(i) = '0') allora non deve essere sollevata alcuna interruzione
     --il segnale temp_s_out esce dall'edge_detector, va in and con il registro DIR (bit a bit) e infine viene
     --inserito nel registro ISR
