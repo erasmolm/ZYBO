@@ -148,15 +148,15 @@ uint32_t BTN_readISR(btn_t* self){
 }
 
 /**
-  * @brief  setta a 0 i bit del registro ISR
+  * @brief  setta a 0 i bit del registro ISR corrispondenti ad una maschera
   * @param 	self: puntatore alla struttura
   * @param	int_mask: maschera delle interrupt
   */
 void BTN_clearISR(btn_t* self,uint32_t int_mask){
-	uint32_t status = APE_readValue32(self->base_addr,APE_ICRISR_REG);
-	uint32_t mask = BTN_ALL_MASK;
+	uint32_t ISR_value = APE_readValue32(self->base_addr,APE_ICRISR_REG);
+	uint32_t mask = int_mask & (ISR_value >> BTN_NIBBLE_OFFSET);
 
-	mask = mask | status;
+	mask = mask << BTN_NIBBLE_OFFSET;
 
 	APE_writeValue32(self->base_addr,APE_ICRISR_REG,mask);
 }
