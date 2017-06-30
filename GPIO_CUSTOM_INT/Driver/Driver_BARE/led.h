@@ -11,10 +11,8 @@
 #define SRC_LED_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "gpgpio.h"
-
-#define BASE_ADDRESS XPAR_GPIO_CUSTOM_IPCORE_0_S00_AXI_BASEADDR /*!< indirizzo base della periferica gpio a cui sono collegati i led*/
-#define LED_NIBBLE_OFFSET	4									/*!< spiazzamento del nibble dei led nel registro data*/
+#include "gpio_LL.h"
+#include "defines.h"
 
 #define LED0	(0 + LED_NIBBLE_OFFSET)
 #define LED1	(1 + LED_NIBBLE_OFFSET)

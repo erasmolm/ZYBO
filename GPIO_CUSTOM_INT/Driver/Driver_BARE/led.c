@@ -103,7 +103,7 @@ void LED_setLeds(led_t* self,uint32_t mask){
   * @param 	self: puntatore alla struttura
   */
 void LED_Init(led_t* self){
-	self->base_addr = (uint32_t*)BASE_ADDRESS;
+	self->base_addr = (uint32_t*)LED_BASE_ADDRESS;
 	self->enable = &LED_enable;
 	self->disable = &LED_disable;
 	self->readStatus = &LED_readStatus;

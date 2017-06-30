@@ -12,11 +12,10 @@
 #define SRC_BUTTON_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "gpgpio.h"
+#include "gpio_LL.h"
+#include "defines.h"
 
-#define BASE_ADDRESS XPAR_GPIO_CUSTOM_IPCORE_0_S00_AXI_BASEADDR /*!<indirizzo base della periferica gpio a cui sono collegati i bottoni*/
-#define BTN_NIBBLE_OFFSET	8
-
+/* Macro ---------------------------------------------------------------------*/
 #define BTN0	(0 + BTN_NIBBLE_OFFSET)
 #define BTN1	(1 + BTN_NIBBLE_OFFSET)
 #define BTN2	(2 + BTN_NIBBLE_OFFSET)
@@ -25,15 +24,18 @@
 /**
   * @brief maschera per abilitare banco bottoni
 */
+#define BTN0_MASK	(uint32_t)(0x1 << BTN0)
+#define BTN1_MASK	(uint32_t)(0x1 << BTN1)
+#define BTN2_MASK	(uint32_t)(0x1 << BTN2)
+#define BTN3_MASK	(uint32_t)(0x1 << BTN3)
 #define BTN_ALL_MASK	(uint32_t)(0xF << BTN_NIBBLE_OFFSET)
-
-
-typedef struct btn_t btn_t;
 
 /**
   * @brief tipo di dato astratto btn_t 
   *
 */
+typedef struct btn_t btn_t;
+
 struct btn_t{
 
 	void (*enable)(btn_t* self);
@@ -41,7 +43,6 @@ struct btn_t{
 	uint32_t (*readStatus)(btn_t* self);
 	void (*enableInterrupt)(btn_t*,uint32_t ,interrupt_mode);
 	void (*disableInterrupt)(btn_t*,uint32_t ,interrupt_mode);
-	void (*clearInterrupt)(btn_t*,int);
 	uint32_t (*readISR)(btn_t*);
 	void (*clearISR)(btn_t*,uint32_t);
 	uint32_t* base_addr;

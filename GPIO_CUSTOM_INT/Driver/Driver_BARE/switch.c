@@ -40,7 +40,7 @@ uint32_t SW_readStatus(switch_t* self){
   * @param 	self: puntatore alla struttura
   */
 void SW_Init(switch_t* self){
-	self->base_addr = (uint32_t*)BASE_ADDRESS;
+	self->base_addr = (uint32_t*)SW_BASE_ADDRESS;
 	self->enable = &SW_enable;
 	self->disable = &SW_disable;
 	self->readStatus = &SW_readStatus;

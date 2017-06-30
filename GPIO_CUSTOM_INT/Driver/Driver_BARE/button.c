@@ -123,20 +123,6 @@ void BTN_disableInterrupt(btn_t* self,uint32_t int_mask,interrupt_mode mode){
 }
 
 /**
-  * @brief  setta a 0 il bit della interrupt servita
-  * @param 	self: puntatore alla struttura
-  * @param 	btn: numero del bottone da accendere
-  * 	Questo parametro può assumere i seguenti valori:
-  *     	@arg BTN0
-  *     	@arg BTN1
-  *     	@arg BTN2
-  *     	@arg BTN3
-  */
-void BTN_clearInterrupt(btn_t* self,int btn){
-	APE_setBit(self->base_addr,APE_ICRISR_REG,1,btn);
-}
-
-/**
   * @brief  legge il valore del registro ISR
   * @param 	self: puntatore alla struttura
   * TODO metti il retval e a tutti
@@ -161,18 +147,34 @@ void BTN_clearISR(btn_t* self,uint32_t int_mask){
 	APE_writeValue32(self->base_addr,APE_ICRISR_REG,mask);
 }
 
+__attribute__((weak))
+void APE_BTN0_Callback(void){
+
+}
+__attribute__((weak))
+void APE_BTN1_Callback(void){
+
+}
+__attribute__((weak))
+void APE_BTN2_Callback(void){
+
+}
+__attribute__((weak))
+void APE_BTN3_Callback(void){
+
+}
+
 /**
   * @brief  inizializzazione della struttura
   * @param 	self: puntatore alla struttura
   */
 void BTN_Init(btn_t* self){
-	self->base_addr = (uint32_t*)BASE_ADDRESS;
+	self->base_addr = (uint32_t*)BTN_BASE_ADDRESS;
 	self->enable = &BTN_enable;
 	self->disable = &BTN_disable;
 	self->readStatus = &BTN_readStatus;
 	self->enableInterrupt = &BTN_enableInterrupt;
 	self->disableInterrupt = &BTN_disableInterrupt;
-	self->clearInterrupt = &BTN_clearInterrupt;
 	self->readISR = &BTN_readISR;
 	self->clearISR = &BTN_clearISR;
 }

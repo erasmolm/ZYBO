@@ -12,9 +12,8 @@
 #define SRC_SWITCH_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "gpgpio.h"
-
-#define BASE_ADDRESS XPAR_GPIO_CUSTOM_IPCORE_0_S00_AXI_BASEADDR/*!<indirizzo base della periferica gpio a cui sono collegati gli switch*/
+#include "gpio_LL.h"
+#include "defines.h"
 
 typedef struct switch_t switch_t;
 

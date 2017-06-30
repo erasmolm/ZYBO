@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include "platform.h"
 #include "xil_printf.h"
-#include "xparameters.h"
+#include "gpio_it.h"
 #include "xscugic.h"
 #include "xil_exception.h"
 #include "led.h"
@@ -21,38 +21,38 @@
 /* Macro ----------------------------------------------------------------------*/
 #define GPIO_DEVICE_ID 		XPAR_GPIO_CUSTOM_IPCORE_0_DEVICE_ID
 #define INTC_DEVICE_ID 		XPAR_SCUGIC_SINGLE_DEVICE_ID
-//#define GPIO_INTERRUPT_ID 	XPS_FPGA5_INT_ID
-#define GPIO_INTERRUPT_ID XPAR_FAB
+#define GPIO_INTERRUPT_ID 	XPS_FPGA0_INT_ID
+
 /* Private variables ---------------------------------------------------------*/
 static XScuGic Intc; // Interrupt Controller Driver
-//static XGpioPs Gpio; //TODO IMPLEMENTARE IL NOSTRO TIPO
 btn_t b;
-
+led_t l;
 
 /* Private function prototypes -----------------------------------------------*/
 void setup(void);
-void GpioHandler(void* CallBackRef);
+void APE_BTN0_Callback(void);
 
 int main()
 {
     init_platform();
 
-    //uint32_t status;
+    uint32_t status;
 
     int count = 0;
     BTN_Init(&b);
     b.enable(&b);
 
+    LED_Init(&l);
+    l.enable(&l);
+
     setup();
 /*
- *
- *
     status=b.readStatus(&b);
     b.enableInterrupt(&b,0xF,INT_RISING);
     status=b.readISR(&b);
     b.clearInterrupt(&b,BTN0);
     b.disableInterrupt(&b,0xF,INT_RISING);
-
+/*
     b.enableInterrupt(&b,0xF,INT_FALLING);
 	status=b.readISR(&b);
 	b.clearISR(&b,status);
@@ -103,7 +103,7 @@ void setup(void){
 
 	//4 gpiohandler è la funzione di gestione delle interrupt
 	//&b è il riferimento all'istanza (o il baseaddress) della periferica interrompente
-	XScuGic_Connect(&Intc,GPIO_INTERRUPT_ID,(Xil_ExceptionHandler)GpioHandler,&b);
+	XScuGic_Connect(&Intc,GPIO_INTERRUPT_ID,(Xil_ExceptionHandler)APE_IRQHandler_0,NULL);
 
 	/* 5: Abilita le interrupt per il device GPIO*/
 	XScuGic_Enable(&Intc, GPIO_INTERRUPT_ID);
@@ -121,12 +121,12 @@ void setup(void){
 	Xil_ExceptionEnable();
 }
 
-void GpioHandler(void* CallBackRef){
-	btn_t* btn = (btn_t*)CallBackRef;
-
-	uint32_t status=b.readISR(btn);
-	b.clearInterrupt(btn,BTN0);
+void APE_BTN0_Callback(void){
+	l.setOn(&l,LED0);
 }
 
+void APE_BTN3_Callback(void){
+	l.setOn(&l,LED3);
+}
 
 
