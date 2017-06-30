@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
   * @file    button.c
-  * @author  Pierluigi,Alfonso,Erasmo
+  * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo file implementa le principali funzioni di gestione dei bottoni
+  * @brief   Questo file implementa le funzioni di gestione dei bottoni
   ******************************************************************************
   */
 
@@ -14,6 +14,7 @@
 /**
   * @brief  abilita tutti i bottoni
   * @param 	self: puntatore alla struttura
+  * @retval	None
   */
 void BTN_enable(btn_t* self){
 	uint32_t status = APE_readValue32(self->base_addr,APE_DIR_REG);
@@ -27,6 +28,7 @@ void BTN_enable(btn_t* self){
 /**
   * @brief  disabilita tutti i bottoni
   * @param 	self: puntatore alla struttura
+  * @retval	None
   */
 void BTN_disable(btn_t* self){
 	uint32_t status = APE_readValue32(self->base_addr,APE_DIR_REG);
@@ -40,6 +42,7 @@ void BTN_disable(btn_t* self){
 /**
   * @brief  legge il valore dei bottoni
   * @param 	self: puntatore alla struttura
+  * @retval	il valore del nibble del registro dato su cui sono mappati i bottoni
   */
 uint32_t BTN_readStatus(btn_t* self){
 	uint32_t status = APE_readValue32(self->base_addr,APE_DATA_REG);
@@ -56,6 +59,7 @@ uint32_t BTN_readStatus(btn_t* self){
   *     	@arg INT_RISING
   *     	@arg INT_FALLING
   *     	@arg INT_RIS_FALL
+  * @retval	None
   */
 void BTN_enableInterrupt(btn_t* self,uint32_t int_mask,interrupt_mode mode){
 	uint32_t status;
@@ -93,6 +97,7 @@ void BTN_enableInterrupt(btn_t* self,uint32_t int_mask,interrupt_mode mode){
   *     	@arg INT_RISING
   *     	@arg INT_FALLING
   *     	@arg INT_RIS_FALL
+  * @retval	None
   */
 void BTN_disableInterrupt(btn_t* self,uint32_t int_mask,interrupt_mode mode){
 	uint32_t status;
@@ -125,7 +130,7 @@ void BTN_disableInterrupt(btn_t* self,uint32_t int_mask,interrupt_mode mode){
 /**
   * @brief  legge il valore del registro ISR
   * @param 	self: puntatore alla struttura
-  * TODO metti il retval e a tutti
+  * @retval	il valore del nibble del registro ISR su cui sono mappate le interrupt dei bottoni
   */
 uint32_t BTN_readISR(btn_t* self){
 	uint32_t status = APE_readValue32(self->base_addr,APE_ICRISR_REG);
@@ -137,6 +142,7 @@ uint32_t BTN_readISR(btn_t* self){
   * @brief  setta a 0 i bit del registro ISR corrispondenti ad una maschera
   * @param 	self: puntatore alla struttura
   * @param	int_mask: maschera delle interrupt
+  * @retval	None
   */
 void BTN_clearISR(btn_t* self,uint32_t int_mask){
 	uint32_t ISR_value = APE_readValue32(self->base_addr,APE_ICRISR_REG);
@@ -147,26 +153,54 @@ void BTN_clearISR(btn_t* self,uint32_t int_mask){
 	APE_writeValue32(self->base_addr,APE_ICRISR_REG,mask);
 }
 
+/**
+  * @brief  dichiarazione debole della callback del bottone 0
+  * @Note	questa funzione deve essere ridefinita dall'utente
+  * 		nel programma principale
+  * @retval	None
+  */
 __attribute__((weak))
 void APE_BTN0_Callback(void){
 
 }
+
+/**
+  * @brief  dichiarazione debole della callback del bottone 0
+  * @Note	questa funzione deve essere ridefinita dall'utente
+  * 		nel programma principale
+  * @retval	None
+  */
 __attribute__((weak))
 void APE_BTN1_Callback(void){
-
+	/* Lasciare vuota */
 }
+
+/**
+  * @brief  dichiarazione debole della callback del bottone 0
+  * @Note	questa funzione deve essere ridefinita dall'utente
+  * 		nel programma principale
+  * @retval	None
+  */
 __attribute__((weak))
 void APE_BTN2_Callback(void){
-
+	/* Lasciare vuota */
 }
+
+/**
+  * @brief  dichiarazione debole della callback del bottone 0
+  * @Note	questa funzione deve essere ridefinita dall'utente
+  * 		nel programma principale
+  * @retval	None
+  */
 __attribute__((weak))
 void APE_BTN3_Callback(void){
-
+	/* Lasciare vuota */
 }
 
 /**
   * @brief  inizializzazione della struttura
   * @param 	self: puntatore alla struttura
+  * @retval None
   */
 void BTN_Init(btn_t* self){
 	self->base_addr = (uint32_t*)BTN_BASE_ADDRESS;
@@ -178,4 +212,3 @@ void BTN_Init(btn_t* self){
 	self->readISR = &BTN_readISR;
 	self->clearISR = &BTN_clearISR;
 }
-

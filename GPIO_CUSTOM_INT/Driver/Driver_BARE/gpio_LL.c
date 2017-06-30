@@ -4,7 +4,7 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo file implementa le principali funzioni di basso livello per
+  * @brief   Questo file implementa le funzioni di basso livello per
   *          l'accesso ai registri di una periferica GPIO con gestione delle
   *          interrupt.
   ******************************************************************************
@@ -19,9 +19,11 @@
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG
-  *     @arg APE_WR_REG
-  *     @arg APE_RD_REG TODO pulezz
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   * @param 	value: valore da scrivere nel registro
   */
 void APE_writeValue32(uint32_t* addr,int offset,uint32_t value){
@@ -34,9 +36,11 @@ void APE_writeValue32(uint32_t* addr,int offset,uint32_t value){
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG TODO pulezz
-  *     @arg APE_WR_REG
-  *     @arg APE_RD_REG
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   * @param 	value: valore da scrivere nel registro
   * @param  part: sottoparte del registro selezionata
   *   Questo parametro può assumere i seguenti valori:
@@ -54,9 +58,11 @@ void APE_writeValue16(uint32_t* addr,int offset,uint16_t value,int part){
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG
-  *     @arg APE_WR_REG TODO pulezz
-  *     @arg APE_RD_REG
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   * @param 	value: valore da scrivere nel registro
   * @param  part: sottoparte del registro selezionata.
   *   Questo parametro può assumere i seguenti valori:
@@ -76,9 +82,11 @@ void APE_writeValue8(uint32_t* addr,int offset,uint8_t value,int part){
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG
-  *     @arg APE_WR_REG TODO pulezz e aggiungi retval
-  *     @arg APE_RD_REG
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   */
 uint32_t APE_readValue32(uint32_t* addr,int offset){
 	assert(((uint32_t)addr)%4 == 0);
@@ -91,9 +99,11 @@ uint32_t APE_readValue32(uint32_t* addr,int offset){
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG
-  *     @arg APE_WR_REG TODO pulezz e aggiungi retval
-  *     @arg APE_RD_REG
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   * @param  part: sottoparte del registro selezionata.
   *    Questo parametro può assumere i seguenti valori:
   *     @arg L
@@ -111,9 +121,11 @@ uint16_t APE_readValue16(uint32_t* addr,int offset, int part){
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG TODO pulezz e aggiungi retval
-  *     @arg APE_WR_REG
-  *     @arg APE_RD_REG
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   * @param  part: sottoparte del registro selezionata
   * @param  part: sottoparte del registro selezionata.
   *   Questo parametro può assumere i seguenti valori:
@@ -135,9 +147,11 @@ uint8_t APE_readValue8(uint32_t* addr,int offset, int part){
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG
-  *     @arg APE_WR_REG TODO pulezz
-  *     @arg APE_RD_REG
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   * @param 	val: valore da impostare
   * @param 	pos: posizione in cui impostare il valore
   */
@@ -157,9 +171,11 @@ void APE_setBit(uint32_t* addr,int offset,bool val,int pos){
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
   *   Questo parametro può assumere i seguenti valori:
-  *     @arg APE_EN_REG
-  *     @arg APE_WR_REG TODO pulezz
-  *     @arg APE_RD_REG
+  *     @arg APE_DATA_REG
+  *     @arg APE_DIR_REG
+  *     @arg APE_IERR_REG
+  *     @arg APE_IERF_REG
+  *     @arg APE_ICRISR_REG
   * @param 	pos: posizione in cui impostare il valore
   */
 void APE_toggleBit(uint32_t* addr,int offset,int pos){

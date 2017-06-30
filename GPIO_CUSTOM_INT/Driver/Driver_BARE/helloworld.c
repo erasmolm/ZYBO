@@ -1,9 +1,10 @@
 /**
   ******************************************************************************
   * @file    helloworld.c
-  * @author  Gruppo 5
+  * @author  Alfonso,Pierluigi,Erasmo (APE)
+  * @version V2.0
   * @date    26-Giugno-2017
-  * @brief	 TODO porcoddio scrivi qualcosa
+  * @brief   TODO descrivere il programma
   ******************************************************************************
   */
 
@@ -27,6 +28,7 @@
 static XScuGic Intc; // Interrupt Controller Driver
 btn_t b;
 led_t l;
+switch_t s;
 
 /* Private function prototypes -----------------------------------------------*/
 void setup(void);
@@ -37,43 +39,18 @@ int main()
     init_platform();
 
     uint32_t status;
-
     int count = 0;
+
     BTN_Init(&b);
     b.enable(&b);
+
+    SW_Init(&s);
+    s.enable(&s);
 
     LED_Init(&l);
     l.enable(&l);
 
     setup();
-/*
-    status=b.readStatus(&b);
-    b.enableInterrupt(&b,0xF,INT_RISING);
-    status=b.readISR(&b);
-    b.clearInterrupt(&b,BTN0);
-    b.disableInterrupt(&b,0xF,INT_RISING);
-/*
-    b.enableInterrupt(&b,0xF,INT_FALLING);
-	status=b.readISR(&b);
-	b.clearISR(&b,status);
-	b.disableInterrupt(&b,0xF,INT_FALLING);
-
-	b.enableInterrupt(&b,0xF,INT_RIS_FALL);
-	status=b.readISR(&b);
-	b.clearInterrupt(&b,BTN0);
-	status=b.readISR(&b);
-	b.clearInterrupt(&b,BTN0);
-	b.disableInterrupt(&b,0xF,INT_RIS_FALL);
-
-	b.disable(&b);
-	status=b.readStatus(&b);
-	b.enableInterrupt(&b,0xF,INT_RISING);
-	status=b.readISR(&b);
-	b.clearInterrupt(&b,BTN0);
-	b.disableInterrupt(&b,0xF,INT_RISING);
-
-*/
-
 
     while(1){
     	count++;
@@ -110,6 +87,7 @@ void setup(void){
 
 	//6
 	b.enableInterrupt(&b,0xF,INT_RISING);
+	s.enableInterrupt(&b,0xF,INT_RISING);
 
 	/* 7: Inizializza la exception table*/
 	Xil_ExceptionInit();
@@ -122,11 +100,35 @@ void setup(void){
 }
 
 void APE_BTN0_Callback(void){
-	l.setOn(&l,LED0);
+	l.toggle(&l,LED0);
+}
+
+void APE_BTN1_Callback(void){
+	l.toggle(&l,LED1);
+}
+
+void APE_BTN2_Callback(void){
+	l.toggle(&l,LED2);
 }
 
 void APE_BTN3_Callback(void){
-	l.setOn(&l,LED3);
+	l.toggle(&l,LED3);
+}
+
+void APE_SW0_Callback(void){
+	l.toggle(&l,LED0);
+}
+
+void APE_SW1_Callback(void){
+	l.toggle(&l,LED1);
+}
+
+void APE_SW2_Callback(void){
+	l.toggle(&l,LED2);
+}
+
+void APE_SW3_Callback(void){
+	l.toggle(&l,LED3);
 }
 
 

@@ -4,12 +4,11 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo file definisce le principali funzioni di basso livello per
+  * @brief   Questo file definisce le funzioni di basso livello per
   *			 l'accesso ai registri di una periferica GPIO con gestione delle
   *			 interrupt.
   ******************************************************************************
   */
-
 #ifndef SRC_GPIO_LL_H_
 #define SRC_GPIO_LL_H_
 
@@ -44,9 +43,21 @@
 #define HL	2	/*!<terzo byte*/
 #define HH	3	/*!<quarto byte*/
 
+/* Typedef -------------------------------------------------------------------*/
 
+/**
+  * @brief tipo booleano
+*/
 typedef enum { false, true } bool;
-typedef enum {INT_RISING, INT_FALLING, INT_RIS_FALL} interrupt_mode;
+
+/**
+  * @brief modalità di interrupt
+*/
+typedef enum {
+	INT_RISING	, 	/*!< modalità interrompente sul fronte di salita*/
+	INT_FALLING	,	/*!< modalità interrompente sul fronte di discesa*/
+	INT_RIS_FALL	/*!< modalità interrompente su entrambi i fronti*/
+} interrupt_mode;
 
 /**
   * @brief firme delle funzioni
