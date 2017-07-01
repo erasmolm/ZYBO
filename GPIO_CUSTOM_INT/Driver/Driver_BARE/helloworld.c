@@ -4,7 +4,9 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   TODO descrivere il programma
+  * @brief   Questo programma testa le interrupt lanciate dai bottoni e dagli
+  *          switch. Ad ogni bottone e ad ogni switch corrisponde una callback,
+  *          che effettua il toggle del led alla medesima posizione.
   ******************************************************************************
   */
 
@@ -38,9 +40,6 @@ int main()
 {
     init_platform();
 
-    uint32_t status;
-    int count = 0;
-
     BTN_Init(&b);
     b.enable(&b);
 
@@ -49,11 +48,11 @@ int main()
 
     LED_Init(&l);
     l.enable(&l);
+    l.setLeds(&l,0x0);
 
     setup();
 
     while(1){
-    	count++;
     }
 
     cleanup_platform();
@@ -85,9 +84,9 @@ void setup(void){
 	/* 5: Abilita le interrupt per il device GPIO*/
 	XScuGic_Enable(&Intc, GPIO_INTERRUPT_ID);
 
-	//6
-	b.enableInterrupt(&b,0xF,INT_RISING);
-	s.enableInterrupt(&b,0xF,INT_RISING);
+	/* 6: Abilita interrupt su entrambi i fronti per bottoni e switch*/
+	b.enableInterrupt(&b,0xF,INT_RIS_FALL);
+	s.enableInterrupt(&b,0xF,INT_RIS_FALL);
 
 	/* 7: Inizializza la exception table*/
 	Xil_ExceptionInit();
