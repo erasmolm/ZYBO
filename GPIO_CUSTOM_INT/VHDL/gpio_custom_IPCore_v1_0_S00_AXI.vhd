@@ -1,6 +1,30 @@
+----------------------------------------------------------------------------------
+-- Company: Gruppo 5
+--!@author Alfonso, Pierluigi, Erasmo (APE)
+--!@file   gpio_custom_IPCore_v1_0_S00_AXI.vhd 
+-- 
+-- Create Date: 20.06.2017 20:15:38
+-- Design Name: 
+-- Module Name: gpio_custom_IPCore_v1_0_S00_AXI - Arch_imp
+--
+--!@brief In questo file è implementata la logica implementativa delle interrupt.
+--!
+--!       La periferica GPIO fornisce 5 registri di 32 bit (di cui width utilizzati):
+--!        ____________
+--!       |____DATA____|
+--!       |____DIR_____|
+--!       |____IERR____|
+--!       |____IERF____|
+--!       |___ICRISR___|
+--!
+--!       
+----------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
+--! la std_logic.misc permette di usare la funzione or_reduce
 use ieee.std_logic_misc.all;
 
 entity gpio_custom_IPCore_v1_0_S00_AXI is
@@ -122,27 +146,27 @@ architecture arch_imp of gpio_custom_IPCore_v1_0_S00_AXI is
 	signal aw_en	: std_logic;
 
     component gpio_array is generic(width : natural := 4);
-        Port ( write : in STD_LOGIC_VECTOR (width-1 downto 0);
-               dir : in STD_LOGIC_VECTOR (width-1 downto 0);
-               read : out STD_LOGIC_VECTOR (width-1 downto 0);
-               pad : inout STD_LOGIC_VECTOR (width-1 downto 0));
+        Port ( write : in    STD_LOGIC_VECTOR (width-1 downto 0);
+               dir   : in    STD_LOGIC_VECTOR (width-1 downto 0);
+               read  : out   STD_LOGIC_VECTOR (width-1 downto 0);
+               pad   : inout STD_LOGIC_VECTOR (width-1 downto 0));
     end component;
     
     component edge_detector is
-        Port ( s_in : in STD_LOGIC;
-               clk : in STD_LOGIC;
-               rising_en : in STD_LOGIC;
-               falling_en : in STD_LOGIC;
-               reset_n : in STD_LOGIC;
-               s_out : out STD_LOGIC);
+        Port ( s_in       : in  STD_LOGIC;
+               clk        : in  STD_LOGIC;
+               rising_en  : in  STD_LOGIC;
+               falling_en : in  STD_LOGIC;
+               reset_n    : in  STD_LOGIC;
+               s_out      : out STD_LOGIC);
     end component;
     
-    signal periph_read    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
-    signal periph_isr    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
-    signal temp_periph_isr    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
-    signal temp_isr    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
-    signal temp_s_out    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
-    signal temp_int    :std_logic := '0';
+    signal periph_read      :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+    signal periph_isr       :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+    signal temp_periph_isr  :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+    signal edge_and_dir     :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+    signal edge_detected    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+    signal temp_int         :std_logic := '0';
 
 begin
 	-- I/O Connections assignments
@@ -420,13 +444,22 @@ begin
 	    end if;
 	  end if;
 	end process;
+     
+--------------------------------------------------------------------------------------------------------------------------------|
+--!  USER LOGIC:                                                                                                                |
+--------------------------------------------------------------------------------------------------------------------------------|  
 
 
-	-- Il segnale gpio_int è ottenuto mediante la OR di tutti i bit del registro ISR (periph_isr)
+	--! Il segnale gpio_int è ottenuto mediante la OR di tutti i bit del registro ISR (periph_isr)
     gpio_int <= or_reduce(periph_isr);
     
-    --Questo 
-    michele: process(periph_isr,slv_reg4,temp_isr,S_AXI_ACLK) is
+    --!edge_and_dir abilita a leggere o meno il fronte in base al registro DIR (slv_reg1)
+    edge_and_dir <= edge_detected and slv_reg1;
+
+    --!Il registro ISR (periph_isr) è gestito in base ai valori di ICR (slv_reg4) e di edge_and_dir.
+    --!Se periph_isr(i) = '1', allora è posto a '0' se slv_reg4(i) = '1'.
+    --!Se periph_isr(i) = '0', allora è posto a '1' se edge_and_dir(i)= '1'.
+    ICRISR_management: process(periph_isr,slv_reg4,edge_and_dir,S_AXI_ACLK) is
     begin
     
     if (rising_edge (S_AXI_ACLK)) then
@@ -435,17 +468,13 @@ begin
         else
             for k in width-1 downto 0 loop
                 if(periph_isr(k) = '1') then
-                       if(slv_reg4(k) = '1') then
-                           temp_periph_isr(k) <= '0';
-                       else
-                           temp_periph_isr(k) <= periph_isr(k);
-                       end if;
-                else
-                       if(temp_isr(k) = '1') then
-                           temp_periph_isr(k) <= '1';
-                       else
-                           temp_periph_isr(k) <= periph_isr(k);
-                       end if;
+                
+                    temp_periph_isr(k) <= periph_isr(k) and (not slv_reg4(k));
+                                   
+                else --se periph_isr(k) = '0'
+                
+                    temp_periph_isr(k) <= periph_isr(k) or (edge_and_dir(k));
+                    
                 end if;
             end loop;
         end if;
@@ -453,36 +482,26 @@ begin
     
     end process;
     
-    --registro di retroazione per evitare loop combinatorio
+    --!feedback
     periph_isr <= temp_periph_isr;
-
-    --Se la direzione è in scrittura (slv_reg1(i) = '0') allora non deve essere sollevata alcuna interruzione
-    --il segnale temp_s_out esce dall'edge_detector, va in and con il registro DIR (bit a bit) e infine viene
-    --inserito nel registro ISR
-    enable_proc: process(slv_reg1,temp_s_out) is
-    begin
-       for i in width-1 downto 0 loop
-           temp_isr(i) <= temp_s_out(i) and slv_reg1(i);
-       end loop;
-    end process;
     
-    --Istanziamo un array di edge_detector per rilevare il rising/falling edge del registro READ
+    --!Array di edge_detector per rilevare il rising/falling edge del registro DATA (slv_reg0)
     edge_detector_array : for i in width-1 downto 0 generate
        edge_detector_inst : edge_detector port map(
-            s_in => periph_read(i),
-            clk => S_AXI_ACLK,
-            rising_en => slv_reg2(i),
-            falling_en => slv_reg3(i),
-            reset_n => S_AXI_ARESETN,
-            s_out => temp_s_out(i)
+            s_in        =>  periph_read(i),
+            clk         =>  S_AXI_ACLK,
+            rising_en   =>  slv_reg2(i),
+            falling_en  =>  slv_reg3(i),
+            reset_n     =>  S_AXI_ARESETN,
+            s_out       =>  edge_detected(i)
             );
     end generate;
     
+    --!Componente gpio_array di lunghezza width
     gpio_array_inst : gpio_array generic map(width) port map(
-        read => periph_read(width-1 downto 0),       
-        write => slv_reg0(width-1 downto 0),
-        dir => slv_reg1(width-1 downto 0),
-        pad => pad );
-	-- User logic ends
-
+        read    =>  periph_read(width-1 downto 0),       
+        write   =>  slv_reg0(width-1 downto 0),
+        dir     =>  slv_reg1(width-1 downto 0),
+        pad     =>  pad );
+        
 end arch_imp;

@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: Gruppo 5
+-- Engineer: Alfonso, Pierluigi, Erasmo (APE)
 -- 
 -- Create Date: 20.06.2017 20:15:38
 -- Design Name: 

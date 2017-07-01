@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------------------
 -- Company: Gruppo 5
--- Engineer: De Gregorio, Fezza, La Montagna
+-- Engineer: Alfonso, Pierluigi, Erasmo (APE)
 -- 
 -- Create Date: 22.06.2017 12:44:08
 -- Design Name: 
