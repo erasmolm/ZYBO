@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include "gpio_LL.h"
 
 #define IN 0
 #define OUT 1
@@ -24,7 +25,7 @@ int main(int argc, char *argv[]){
 	int fd;
 	int direction=IN;
 	unsigned gpio_addr = 0;
-	int value = 0;
+	uint32_t value = 0;
 	
 	unsigned page_addr, page_offset;
 	void *ptr;
@@ -82,13 +83,12 @@ int main(int argc, char *argv[]){
 
 	if (direction == IN) {
 	/* Read value from the device register */
-		value = *((unsigned *)(ptr + page_offset));
+		value = APE_readValue32(ptr,page_offset);
 		printf("gpio dev-mem test: input: %08x\n",value);
 	} else {
 	/* Write value to the device register */
 		printf("Going to write onto %08x the value %08x\n", gpio_addr, value );
-		*((unsigned *)(ptr + page_offset + 4)) = 0x0;
-		*((unsigned *)(ptr + page_offset)) = value;
+		APE_writeValue32(ptr,page_offset,value);
 	}
 	
 	/* let's unmap */
