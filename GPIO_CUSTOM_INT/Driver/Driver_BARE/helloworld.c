@@ -38,6 +38,7 @@ void setup(void);
 int main()
 {
     init_platform();
+    switch_state state[4];
 
     BTN_Init(&b);
     b.enable(&b);
@@ -52,6 +53,10 @@ int main()
     setup();
 
     while(1){
+    	state[0] = s.readSwitch(&s,SW0);
+    	state[1] = s.readSwitch(&s,SW1);
+    	state[2] = s.readSwitch(&s,SW2);
+    	state[3] = s.readSwitch(&s,SW3);
     }
 
     cleanup_platform();

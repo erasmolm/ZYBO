@@ -58,7 +58,7 @@ uint32_t SW_readStatus(switch_t* self){
 switch_state SW_readSwitch(switch_t* self,switch_n sw_num){
 	uint32_t status = APE_readValue32(self->base_addr,APE_DATA_REG);
 	status = (status & (0x1 << sw_num));
-	return (status >> SW_NIBBLE_OFFSET);
+	return (status >> sw_num);
 }
 
 /**
