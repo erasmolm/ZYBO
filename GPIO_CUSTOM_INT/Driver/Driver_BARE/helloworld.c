@@ -17,9 +17,9 @@
 #include "gpio_it.h"
 #include "xscugic.h"
 #include "xil_exception.h"
-#include "led.h"
 #include "button.h"
-
+#include "led.h"
+#include "switch.h"
 
 /* Macro ----------------------------------------------------------------------*/
 #define GPIO_DEVICE_ID 		XPAR_GPIO_CUSTOM_IPCORE_0_DEVICE_ID
@@ -34,7 +34,6 @@ switch_t s;
 
 /* Private function prototypes -----------------------------------------------*/
 void setup(void);
-void APE_BTN0_Callback(void);
 
 int main()
 {

@@ -31,11 +31,19 @@
   * @brief posizione dei switch nei registri
 */
 typedef enum{
-	SW0 = 0 + SW_NIBBLE_OFFSET , /*!< posizione bit del bottone 0*/
-	SW1 = 1 + SW_NIBBLE_OFFSET , /*!< posizione bit del bottone 1*/
-	SW2 = 2 + SW_NIBBLE_OFFSET , /*!< posizione bit del bottone 2*/
-	SW3 = 3 + SW_NIBBLE_OFFSET   /*!< posizione bit del bottone 3*/
+	SW0 = 0 + SW_NIBBLE_OFFSET , /*!< posizione bit dello switch 0*/
+	SW1 = 1 + SW_NIBBLE_OFFSET , /*!< posizione bit dello switch 1*/
+	SW2 = 2 + SW_NIBBLE_OFFSET , /*!< posizione bit dello switch 2*/
+	SW3 = 3 + SW_NIBBLE_OFFSET   /*!< posizione bit dello switch 3*/
 }switch_n;
+
+/**
+  * @brief stato di uno switch
+*/
+typedef enum{
+	SW_OFF = 0 , /*!< posizione OFF*/
+	SW_ON = 1	 /*!< posizione ON */
+}switch_state;
 
 /**
   * @brief tipo switch_t
@@ -47,6 +55,7 @@ struct switch_t{
 	void (*enable)(switch_t* self);
 	void (*disable)(switch_t* self);
 	uint32_t (*readStatus)(switch_t* self);
+	switch_state (*readSwitch)(switch_t* self,switch_n);
 	void (*enableInterrupt)(switch_t*,uint32_t ,interrupt_mode);
 	void (*disableInterrupt)(switch_t*,uint32_t ,interrupt_mode);
 	uint32_t (*readISR)(switch_t*);

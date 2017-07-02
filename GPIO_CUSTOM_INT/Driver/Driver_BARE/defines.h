@@ -17,6 +17,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "xparameters.h"
 
+/* ########################## Selezione Moduli ############################## */
+/**
+  * @brief Lista di moduli che possono essere abilitati
+  */
+#define APE_LED_MOD_ENABLED	/*!< Abilita l'utilizzo dei led */
+#define APE_SW_MOD_ENABLED	/*!< Abilita l'utilizzo degli switch */
+#define APE_BTN_MOD_ENABLED	/*!< Abilita l'utilizzo dei bottoni */
+
 /*
  * @brief Definisce l'indizzo base della periferica GPIO utilizzata.
  * 		  E' possibile dichiarare molteplici periferiche e mappare
@@ -32,8 +40,10 @@
  * 		  bit. Il banco può essere associato ad una sola periferica e
  * 		  non è divisibile.
  */
-#define BTN_BASE_ADDRESS	GPIO_0_BASE_ADDRESS	/*!< Indirizzo base */
-#define BTN_NIBBLE_OFFSET	8					/*!< Spiazzamento nibble */
+#ifdef APE_BTN_MOD_ENABLED
+	#define BTN_BASE_ADDRESS	GPIO_0_BASE_ADDRESS	/*!< Indirizzo base */
+	#define BTN_NIBBLE_OFFSET	8					/*!< Spiazzamento nibble */
+#endif /* MODULO BOTTONI ABILITATO */
 
 /*
  * @brief Definisce a quale periferica GPIO associare l'intero banco di led
@@ -42,8 +52,10 @@
  * 		  bit. Il banco può essere associato ad una sola periferica e
  * 		  non è divisibile.
  */
-#define LED_BASE_ADDRESS	GPIO_0_BASE_ADDRESS	/*!< Indirizzo base */
-#define LED_NIBBLE_OFFSET	4					/*!< Spiazzamento nibble */
+#ifdef APE_LED_MOD_ENABLED
+	#define LED_BASE_ADDRESS	GPIO_0_BASE_ADDRESS	/*!< Indirizzo base */
+	#define LED_NIBBLE_OFFSET	4					/*!< Spiazzamento nibble */
+#endif /* MODULO LED ABILITATO*/
 
 /*
  * @brief Definisce a quale periferica GPIO associare l'intero banco di switch
@@ -52,7 +64,9 @@
  * 		  bit. Il banco può essere associato ad una sola periferica e
  * 		  non è divisibile.
  */
-#define SW_BASE_ADDRESS		GPIO_0_BASE_ADDRESS	/*!< Indirizzo base */
-#define SW_NIBBLE_OFFSET	0					/*!< Spiazzamento nibble */
+#ifdef APE_SW_MOD_ENABLED
+	#define SW_BASE_ADDRESS		GPIO_0_BASE_ADDRESS	/*!< Indirizzo base */
+	#define SW_NIBBLE_OFFSET	0					/*!< Spiazzamento nibble */
+#endif /* MODULO SWITCH ABILITATO*/
 
 #endif /* SRC_DEFINES_H_ */

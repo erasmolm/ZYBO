@@ -13,11 +13,7 @@
 #define SRC_GPIO_IT_H_
 
 /* Include -------------------------------------------------------------------*/
-#include <assert.h>
-#include "gpio_LL.h"
 #include "defines.h"
-#include "button.h"
-#include "switch.h"
 
 /* Prototipi delle funzioni --------------------------------------------------*/
 void APE_IRQHandler_0(void);

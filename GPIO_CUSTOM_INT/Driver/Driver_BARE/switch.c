@@ -51,6 +51,17 @@ uint32_t SW_readStatus(switch_t* self){
 }
 
 /**
+  * @brief  legge il valore di uno switch in particolare
+  * @param 	self: puntatore alla struttura
+  * @retval	lo stato dello switch (true/false)
+  */
+switch_state SW_readSwitch(switch_t* self,switch_n sw_num){
+	uint32_t status = APE_readValue32(self->base_addr,APE_DATA_REG);
+	status = (status & (0x1 << sw_num));
+	return (status >> SW_NIBBLE_OFFSET);
+}
+
+/**
   * @brief  abilita le interrupt agli switch
   * @param 	self: puntatore alla struttura
   * @param 	int_mask: maschera delle interrupt
@@ -208,6 +219,7 @@ void SW_Init(switch_t* self){
 	self->enable = &SW_enable;
 	self->disable = &SW_disable;
 	self->readStatus = &SW_readStatus;
+	self->readSwitch = &SW_readSwitch;
 	self->enableInterrupt = &SW_enableInterrupt;
 	self->disableInterrupt = &SW_disableInterrupt;
 	self->readISR = &SW_readISR;

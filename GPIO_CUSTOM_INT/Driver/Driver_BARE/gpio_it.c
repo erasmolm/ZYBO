@@ -12,8 +12,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gpio_it.h"
 
-/* Dichiarati nel main */
-//extern b; TODO
+#ifdef APE_BTN_MOD_ENABLED
+	#include "button.h"
+#endif /* MODULO BOTTONI ABILITATO */
+
+#ifdef APE_SW_MOD_ENABLED
+	#include "switch.h"
+#endif /* MODULO SWITCH ABILITATO */
 
 /**
   * @brief  IRQ Handler della periferica GPIO_0
