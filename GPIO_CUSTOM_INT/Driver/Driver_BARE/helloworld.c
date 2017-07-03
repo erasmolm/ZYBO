@@ -90,7 +90,7 @@ void setup(void){
 
 	/* 6: Abilita interrupt su entrambi i fronti per bottoni e switch*/
 	b.enableInterrupt(&b,0xF,INT_RIS_FALL);
-	s.enableInterrupt(&b,0xF,INT_RIS_FALL);
+	s.enableInterrupt(&s,0xF,INT_RIS_FALL);
 
 	/* 7: Inizializza la exception table*/
 	Xil_ExceptionInit();
