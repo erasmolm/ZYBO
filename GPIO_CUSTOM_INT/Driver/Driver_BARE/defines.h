@@ -14,8 +14,28 @@
 #ifndef SRC_DEFINES_H_
 #define SRC_DEFINES_H_
 
-/* Includes ------------------------------------------------------------------*/
-#include "xparameters.h"
+/* ######################## Configurazione Driver ########################### */
+/**
+  * @brief Seleziona il tipo di driver da implementare
+  * @Note  /!\ Nel caso UIO è necessario ridefinire runtime il base address dopo la mmap.
+  */
+//#define DRIVER_UIO
+#define DRIVER_BARE
+
+/*
+ * @brief Definisce l'indizzo base della periferica GPIO utilizzata.
+ * 		  E' possibile dichiarare molteplici periferiche e mappare
+ * 		  su di esse il banco led, quello dei bottoni e/o quello degli
+ * 		  switch.
+ */
+#ifdef DRIVER_BARE
+	#include "xparameters.h"
+	#define GPIO_0_BASE_ADDRESS	XPAR_GPIO_CUSTOM_IPCORE_0_S00_AXI_BASEADDR	/*!< Indirizzo base periferica 0*/
+	//#define GPIO_X_BASE_ADDRESS											/*!< Indirizzo base periferica X*/
+#else
+	#define GPIO_0_BASE_ADDRESS	0x0		/*!< Indirizzo base periferica 0 fittizio*/
+	//#define GPIO_X_BASE_ADDRESS		/*!< Indirizzo base periferica X fittizio*/
+#endif
 
 /* ########################## Selezione Moduli ############################## */
 /**
@@ -24,14 +44,6 @@
 #define APE_LED_MOD_ENABLED	/*!< Abilita l'utilizzo dei led */
 #define APE_SW_MOD_ENABLED	/*!< Abilita l'utilizzo degli switch */
 #define APE_BTN_MOD_ENABLED	/*!< Abilita l'utilizzo dei bottoni */
-
-/*
- * @brief Definisce l'indizzo base della periferica GPIO utilizzata.
- * 		  E' possibile dichiarare molteplici periferiche e mappare
- * 		  su di esse il banco led, quello dei bottoni e/o quello degli
- * 		  switch.
- */
-#define GPIO_0_BASE_ADDRESS	XPAR_GPIO_CUSTOM_IPCORE_0_S00_AXI_BASEADDR	/*!< Indirizzo base periferica 0*/
 
 /*
  * @brief Definisce a quale periferica GPIO associare l'intero banco di bottoni
