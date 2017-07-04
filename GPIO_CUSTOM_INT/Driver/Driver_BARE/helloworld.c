@@ -22,114 +22,178 @@
 #include "switch.h"
 
 /* Macro ----------------------------------------------------------------------*/
-#define GPIO_DEVICE_ID 		XPAR_GPIO_CUSTOM_IPCORE_0_DEVICE_ID
-#define INTC_DEVICE_ID 		XPAR_SCUGIC_SINGLE_DEVICE_ID
-#define GPIO_INTERRUPT_ID 	XPS_FPGA0_INT_ID
+#define GPIO_DEVICE_ID 		XPAR_GPIO_CUSTOM_IPCORE_0_DEVICE_ID /*!< ID della periferica*/
+#define INTC_DEVICE_ID 		XPAR_SCUGIC_SINGLE_DEVICE_ID 		/*!< ID del GIC*/
+#define GPIO_INTERRUPT_ID 	XPS_FPGA0_INT_ID /*!< ID della linea di interrupt*/
 
 /* Private variables ---------------------------------------------------------*/
-static XScuGic Intc; // Interrupt Controller Driver
-btn_t b;
-led_t l;
-switch_t s;
+static XScuGic Intc; /*!< Handler del GIC*/
+btn_t b;	/*!< Handler dei bottoni*/
+led_t l;	/*!< Handler dei led*/
+switch_t s;	/*!< Handler degli switch*/
+switch_state state[4]; /*!< Stato degli switch*/
 
 /* Private function prototypes -----------------------------------------------*/
 void setup(void);
+void loop(void);
 
 int main()
 {
     init_platform();
-    switch_state state[4];
 
-    BTN_Init(&b);
-    b.enable(&b);
-
-    SW_Init(&s);
-    s.enable(&s);
-
-    LED_Init(&l);
-    l.enable(&l);
-    l.setLeds(&l,0x0);
-
+    /*Inizializza led, bottoni e switch*/
     setup();
 
-    while(1){
-    	state[0] = s.readSwitch(&s,SW0);
-    	state[1] = s.readSwitch(&s,SW1);
-    	state[2] = s.readSwitch(&s,SW2);
-    	state[3] = s.readSwitch(&s,SW3);
-    }
+    /**
+     * INIZIALIZZAZIONE INTERRUPT
+     */
+
+    /* 1: Inizializza interrupt controller*/
+	XScuGic_Config *IntcConfig =  XScuGic_LookupConfig(INTC_DEVICE_ID);
+	if (NULL == IntcConfig){
+		return XST_FAILURE;
+	}
+
+	if(XST_SUCCESS != XScuGic_CfgInitialize(&Intc, IntcConfig,IntcConfig->CpuBaseAddress)){
+		return XST_FAILURE;
+	}
+
+	/* 2: Setta la priorità per la sorgente IRQ*/
+	XScuGic_SetPriorityTriggerType(&Intc,GPIO_INTERRUPT_ID,0xA0,0x3);
+
+	/* 3: gpiohandler è la funzione di gestione delle interrupt */
+	if(XST_SUCCESS != XScuGic_Connect(&Intc,GPIO_INTERRUPT_ID,(Xil_ExceptionHandler)APE_IRQHandler_0,NULL)){
+		return XST_FAILURE;
+	}
+
+	/* 4: Abilita le interrupt per il device GPIO*/
+	XScuGic_Enable(&Intc, GPIO_INTERRUPT_ID);
+
+	/* 5: Abilita interrupt su entrambi i fronti per bottoni e switch*/
+	b.enableInterrupt(&b,0xF,INT_RIS_FALL);
+	s.enableInterrupt(&s,0xF,INT_RIS_FALL);
+
+	/* 6: Inizializza la exception table*/
+	Xil_ExceptionInit();
+
+	/* 7: registra l'interrupt controller handler con la exception table*/
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,(Xil_ExceptionHandler)XScuGic_InterruptHandler,&Intc);
+
+	/* 8: abilita eccezioni */
+	Xil_ExceptionEnable();
+
+    /*-------------------------------------------------------------------------------------------*/
+
+    for(;;)loop();
 
     cleanup_platform();
     return 0;
 }
 
 /**
-  * @brief  funzione di inizializzazione TODO completare
+  * @brief  Inizializza gli handler di switch, led e bottoni
   * @param  None
   * @retval None
   */
 void setup(void){
-	//0
-    XScuGic_Config *IntcConfig;
 
-	/* 1: */
-	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	/*Inizializza handler bottoni e setta la direzione*/
+	BTN_Init(&b);
+	b.enable(&b);
 
-	/* 2: Inizializza interrupt controller driver*/
-	XScuGic_CfgInitialize(&Intc, IntcConfig,IntcConfig->CpuBaseAddress);
+	/*Inizializza handler switch e setta la direzione*/
+	SW_Init(&s);
+	s.enable(&s);
 
-	/* 3: */
-	XScuGic_SetPriorityTriggerType(&Intc,GPIO_INTERRUPT_ID,0xA0,0x3);
+	/*Inizializza handler led e setta la direzione*/
+	LED_Init(&l);
+	l.enable(&l);
 
-	//4 gpiohandler è la funzione di gestione delle interrupt
-	//&b è il riferimento all'istanza (o il baseaddress) della periferica interrompente
-	XScuGic_Connect(&Intc,GPIO_INTERRUPT_ID,(Xil_ExceptionHandler)APE_IRQHandler_0,NULL);
-
-	/* 5: Abilita le interrupt per il device GPIO*/
-	XScuGic_Enable(&Intc, GPIO_INTERRUPT_ID);
-
-	/* 6: Abilita interrupt su entrambi i fronti per bottoni e switch*/
-	b.enableInterrupt(&b,0xF,INT_RIS_FALL);
-	s.enableInterrupt(&s,0xF,INT_RIS_FALL);
-
-	/* 7: Inizializza la exception table*/
-	Xil_ExceptionInit();
-
-	/* 8: registra l'interrupt controller handler con la exception table*/
-	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,(Xil_ExceptionHandler)XScuGic_InterruptHandler,&Intc);
-
-	/* 9: abilita eccezioni non critiche*/
-	Xil_ExceptionEnable();
+	/*Spegni tutti i led*/
+	l.setLeds(&l,0x0);
 }
 
+/**
+  * @brief  Legge lo stato di ogni switch e lo salva nella variabile
+  * 		corrispondente
+  * @param  None
+  * @retval None
+  */
+void loop(void){
+	state[0] = s.readSwitch(&s,SW0);
+	state[1] = s.readSwitch(&s,SW1);
+	state[2] = s.readSwitch(&s,SW2);
+	state[3] = s.readSwitch(&s,SW3);
+}
+
+/**
+  * @brief  Callback associata al bottone 0
+  * @param  None
+  * @retval None
+  */
 void APE_BTN0_Callback(void){
 	l.toggle(&l,LED0);
 }
 
+/**
+  * @brief  Callback associata al bottone 1
+  * @param  None
+  * @retval None
+  */
 void APE_BTN1_Callback(void){
 	l.toggle(&l,LED1);
 }
 
+/**
+  * @brief  Callback associata al bottone 2
+  * @param  None
+  * @retval None
+  */
 void APE_BTN2_Callback(void){
 	l.toggle(&l,LED2);
 }
 
+/**
+  * @brief  Callback associata al bottone 3
+  * @param  None
+  * @retval None
+  */
 void APE_BTN3_Callback(void){
 	l.toggle(&l,LED3);
 }
 
+/**
+  * @brief  Callback associata allo switch 0
+  * @param  None
+  * @retval None
+  */
 void APE_SW0_Callback(void){
 	l.toggle(&l,LED0);
 }
 
+/**
+  * @brief  Callback associata allo switch 1
+  * @param  None
+  * @retval None
+  */
 void APE_SW1_Callback(void){
 	l.toggle(&l,LED1);
 }
 
+/**
+  * @brief  Callback associata allo switch 2
+  * @param  None
+  * @retval None
+  */
 void APE_SW2_Callback(void){
 	l.toggle(&l,LED2);
 }
 
+/**
+  * @brief  Callback associata allo switch 3
+  * @param  None
+  * @retval None
+  */
 void APE_SW3_Callback(void){
 	l.toggle(&l,LED3);
 }

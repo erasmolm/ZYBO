@@ -28,6 +28,9 @@ void APE_IRQHandler_0(void){
 	/* Legge il registro ISR */
 	uint32_t state = APE_readValue32((uint32_t*)GPIO_0_BASE_ADDRESS,APE_ICRISR_REG);
 
+	/* Azzera il registro ISR */
+	APE_writeValue32((uint32_t*)GPIO_0_BASE_ADDRESS,APE_ICRISR_REG,0xFFFFFFFF);
+
 	/* Chiama le callback dei bottoni */
 	if((BTN0_MASK & state) == BTN0_MASK){
 		APE_BTN0_Callback();
@@ -57,9 +60,6 @@ void APE_IRQHandler_0(void){
 	}
 
 	/* ----------------------------- */
-
-	/* Azzera il registro ISR */
-	APE_writeValue32((uint32_t*)GPIO_0_BASE_ADDRESS,APE_ICRISR_REG,0xFFFFFFFF);
 }
 
 /**
