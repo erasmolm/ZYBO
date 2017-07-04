@@ -44,8 +44,6 @@ architecture Behavioral of edge_detector is
 
 signal q1 : STD_LOGIC;
 signal q2 : STD_LOGIC;
-signal signal_rise : STD_LOGIC;
-signal signal_fall : STD_LOGIC;
 
 begin
 

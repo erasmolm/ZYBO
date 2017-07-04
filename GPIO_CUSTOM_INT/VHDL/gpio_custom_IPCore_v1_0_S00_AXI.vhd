@@ -1,23 +1,42 @@
 ----------------------------------------------------------------------------------
--- Company: Gruppo 5
---!@author Alfonso, Pierluigi, Erasmo (APE)
---!@file   gpio_custom_IPCore_v1_0_S00_AXI.vhd 
--- 
--- Create Date: 20.06.2017 20:15:38
--- Design Name: 
--- Module Name: gpio_custom_IPCore_v1_0_S00_AXI - Arch_imp
---
---!@brief In questo file è implementata la logica implementativa delle interrupt.
+--! Company: Gruppo 5
+--! @author Alfonso, Pierluigi, Erasmo (APE)
+--! @file   gpio_custom_IPCore_v1_0_S00_AXI.vhd 
+--! 
+--! Create Date: 20.06.2017 20:15:38
+--! Design Name: 
+--! Module Name: gpio_custom_IPCore_v1_0_S00_AXI - Arch_imp
 --!
---!       La periferica GPIO fornisce 5 registri di 32 bit (di cui width utilizzati):
+--! @brief In questo file è implementata la logica implementativa delle interrupt.
+--!
+--! La periferica GPIO fornisce 5 registri di 32 bit (di cui width sono utilizzati):
 --!        ____________
---!       |____DATA____|
---!       |____DIR_____|
---!       |____IERR____|
---!       |____IERF____|
---!       |___ICRISR___|
+--! 0x00  |____DATA____|    Registro dato della periferica
+--! 0x04  |____DIR_____|    Registro direzione
+--! 0x08  |____IERR____|    Registro Abilitazione Interrupt sul fronte di salita
+--! 0x0C  |____IERF____|    Registro Abilitazione Interrupt sul fronte di salita
+--! 0x10  |___ICRISR___|    Registro Stato/Controllo Interrupt
 --!
+--! DATA: Acceduto sia in lettura che in scrittura. Contiene i dati da scrivere 
+--!       verso la periferica e provenienti dalla periferica.
+--!       Il bit i-esimo di questo registro corrisponde all'i-esimo pin GPIO. 
+--!
+--! DIR:  Setta la direzione del buffer tristate: 
+--!         '1': direzione lettura dal pin GPIO
+--!         '0': direzione scrittura verso pin GPIO
+--!       Il bit i-esimo di questo registro corrisponde all'i-esimo pin GPIO.
+--!
+--! IERR: Abilita le interrupt sul fronte di salita dell'input.
+--!
+--! IERF: Abilita le interrupt sul fronte di discesa dell'input.
+--!
+--! ISR:  Accedendo in lettura all'offset di ICRISR viene riportato il registro ISR:
+--!       ogni bit segnala l'eventuale interrupt pendente sul corrispondente pin GPIO.
 --!       
+--! ICR:  Accedendo in scrittura all'offset di ICRISR viene riportato il registro ICR:
+--!       scrivendo '1' su un bit la corrispondente interrupt pendente su ISR viene
+--!       azzerata. Il dato scritto su ICR viene cancellato al successivo colpo di clock,
+--!       pertanto il registro è sempre nullo.
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -270,6 +289,8 @@ begin
 	      slv_reg4 <= (others => '0');
 	    else
 	      loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
+	      --! ICR (slv_reg4) viene azzerato ad ogni colpo di clock. Se ci sono scritture
+	      --! provenienti dal bus, allora vengono poste in ingresso su slv_reg4.
 	      slv_reg4 <= (others => '0');
 	      if (slv_reg_wren = '1') then        
 	        case loc_addr is
@@ -450,15 +471,16 @@ begin
 --------------------------------------------------------------------------------------------------------------------------------|  
 
 
-	--! Il segnale gpio_int è ottenuto mediante la OR di tutti i bit del registro ISR (periph_isr)
+	--! Il segnale gpio_int è ottenuto mediante la OR di tutti i bit del registro ISR (periph_isr).
     gpio_int <= or_reduce(periph_isr);
     
-    --!edge_and_dir abilita a leggere o meno il fronte in base al registro DIR (slv_reg1)
+    --! edge_and_dir abilita a leggere o meno il fronte in base al registro DIR (slv_reg1).
+    --! Il segnale edge_detected proviene dall'output dell'edge_detector.
     edge_and_dir <= edge_detected and slv_reg1;
 
-    --!Il registro ISR (periph_isr) è gestito in base ai valori di ICR (slv_reg4) e di edge_and_dir.
-    --!Se periph_isr(i) = '1', allora è posto a '0' se slv_reg4(i) = '1'.
-    --!Se periph_isr(i) = '0', allora è posto a '1' se edge_and_dir(i)= '1'.
+    --! Il registro ISR (periph_isr) è gestito in base ai valori di ICR (slv_reg4) e di edge_and_dir:
+    --! Se periph_isr(i) = '1', allora è posto a '0' se slv_reg4(i) = '1'.
+    --! Se periph_isr(i) = '0', allora è posto a '1' se edge_and_dir(i)= '1'.
     ICRISR_management: process(periph_isr,slv_reg4,edge_and_dir,S_AXI_ACLK) is
     begin
     
@@ -485,7 +507,8 @@ begin
     --!feedback
     periph_isr <= temp_periph_isr;
     
-    --!Array di edge_detector per rilevare il rising/falling edge del registro DATA (slv_reg0)
+    --! Array di edge_detector per rilevare il rising/falling edge del registro DATA (slv_reg0)
+    --! Il segnale edge_detected(i) notifica il fronte di discesa/salita quando è alto.
     edge_detector_array : for i in width-1 downto 0 generate
        edge_detector_inst : edge_detector port map(
             s_in        =>  periph_read(i),
@@ -497,7 +520,7 @@ begin
             );
     end generate;
     
-    --!Componente gpio_array di lunghezza width
+    --! Componente gpio_array di lunghezza width
     gpio_array_inst : gpio_array generic map(width) port map(
         read    =>  periph_read(width-1 downto 0),       
         write   =>  slv_reg0(width-1 downto 0),
