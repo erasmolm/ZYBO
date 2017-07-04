@@ -239,6 +239,9 @@ void APE_IRQHandler_0(void* ptr){
 	/* Legge il registro ISR */
 	uint32_t state = APE_readValue32((uint32_t*)ptr,APE_ICRISR_REG);
 
+	/* Azzera il registro ISR */
+	APE_writeValue32((uint32_t*)ptr,APE_ICRISR_REG,0xFFFFFFFF);
+
 	if((BTN0_MASK & state) == BTN0_MASK){
 		APE_toggleBit((uint32_t*)ptr,APE_DATA_REG,LED0);
 	}
@@ -267,7 +270,5 @@ void APE_IRQHandler_0(void* ptr){
 
 	/* ----------------------------- */
 
-	/* Azzera il registro ISR */
-	APE_writeValue32((uint32_t*)ptr,APE_ICRISR_REG,0xFFFFFFFF);
 }
 
