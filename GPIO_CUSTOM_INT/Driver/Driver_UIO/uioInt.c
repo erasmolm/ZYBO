@@ -5,11 +5,11 @@
   * @version V1.0
   * @date    03-Luglio-2017
   * @brief   Driver UIO user-space per linux della periferica GPIO custom.
-  * 		 Il driver ha 3 modalità:
-  * 		 IN: generica lettura dei registri della periferica con utilizzo
+  * 		 -Il driver ha 3 modalità:
+  * 		 -IN: generica lettura dei registri della periferica con utilizzo
   * 		 	 delle interrupt.
-  * 		 OUT: generica scrittura verso i registri della periferica.
-  * 		 TEST: il driver testa le interrupt effettuando il toggle di un led
+  * 		 -OUT: generica scrittura verso i registri della periferica.
+  * 		 -TEST: il driver testa le interrupt effettuando il toggle di un led
   * 		 	   alla pressione/rilascio di un bottone e/o toggling di uno switch.
   ******************************************************************************
   */
