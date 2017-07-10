@@ -17,7 +17,7 @@
 /* ######################## Configurazione Driver ########################### */
 /**
   * @brief Seleziona il tipo di driver da implementare
-  * @Note  /!\ Nel caso UIO è necessario ridefinire runtime il base address dopo la mmap.
+  * @Note  <br>/!\ Nel caso UIO è necessario ridefinire runtime il base address dopo la mmap.
   */
 //#define DRIVER_UIO
 #define DRIVER_BARE
