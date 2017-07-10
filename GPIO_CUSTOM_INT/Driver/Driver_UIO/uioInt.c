@@ -5,12 +5,12 @@
   * @version V1.0
   * @date    03-Luglio-2017
   * @brief   Driver UIO user-space per linux della periferica GPIO custom.
-  * 		 -Il driver ha 3 modalità:
-  * 		 -IN: generica lettura dei registri della periferica con utilizzo
+  * 		 <br>Il driver ha 3 modalità:
+  * 		 <br>IN: generica lettura dei registri della periferica con utilizzo
   * 		 	 delle interrupt.
-  * 		 -OUT: generica scrittura verso i registri della periferica.
-  * 		 -TEST: il driver testa le interrupt effettuando il toggle di un led
-  * 		 	   alla pressione/rilascio di un bottone e/o toggling di uno switch.
+  * 		 <br>OUT: generica scrittura verso i registri della periferica.
+  * 		 <br>TEST: il driver testa le interrupt effettuando il toggle di un led
+  * 		 	 alla pressione/rilascio di un bottone e/o toggling di uno switch.
   ******************************************************************************
   */
 
@@ -80,19 +80,19 @@ int main(int argc, char *argv[]){
 
 	}
 
-	/* Open the UIO device file */
+	/* Invoca la open sul device file */
 	fd = open(uiod, O_RDWR);
 	if (fd < 1) {
 		perror(argv[0]);
-		printf("Invalid UIO device file:%s.\n", uiod);
+		printf("Device file non valido:%s.\n", uiod);
 		usage();
 		return -1;
 	}
 
-	/* mmap the UIO device */
+	/* Effettua il mapping degli indirizzi fisici-virtuali */
 	ptr = mmap(NULL, GPIO_MAP_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
-	/* Lettura generica dalla GPIO */
+	/* Lettura generica dalla periferica */
 	if (direction == IN) {
 		printf("\n\n Modalità IN \n\n");
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]){
 			/* Abilita le Interrupt */
 			APE_writeValue32(ptr,APE_IERR_REG,BTN_ALL_MASK|SW_ALL_MASK);
 
-			/* Wait for interrupt */
+			/* Verifica la presenza di interrupt */
 			nb = read(fd, &info, sizeof(info));
 			if (nb == sizeof(info)) {
 
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 
-	/* Scrittura generica verso la GPIO */
+	/* Scrittura generica verso la periferica */
 	if(direction == OUT) {
 		printf("\n\n Modalità OUT \n\n");
 		APE_writeValue32(ptr,APE_DIR_REG,0x000);
@@ -171,12 +171,13 @@ int main(int argc, char *argv[]){
 			value = APE_readValue32(ptr,APE_IERR_REG);
 			printf("\n\n");
 
-			/* Wait for interrupt */
+			/* Verifica la presenza di interrupt */
 			nb = read(fd, &info, sizeof(info));
 			if (nb == sizeof(info)) {
-					/* Disabilita le interrupt */
-					sw_handler.disableInterrupt(&sw_handler,0xF,INT_RIS_FALL);
-					btn_handler.disableInterrupt(&btn_handler,0xF,INT_RIS_FALL);
+
+				/* Disabilita le interrupt */
+				sw_handler.disableInterrupt(&sw_handler,0xF,INT_RIS_FALL);
+				btn_handler.disableInterrupt(&btn_handler,0xF,INT_RIS_FALL);
 
 				/* Serve le interrupt */
 				APE_IRQHandler_0(ptr);
@@ -184,8 +185,6 @@ int main(int argc, char *argv[]){
 				printf("Bottoni: %08x  ",btn_handler.readStatus(&btn_handler));
 				printf("Led: %08x  ",led_handler.readStatus(&led_handler));
 
-				/* Marca le interrupt come servite */
-				//APE_writeValue32(ptr,APE_ICRISR_REG,BTN_ALL_MASK|SW_ALL_MASK);
 			}
 
 			nb = write(fd, &info, sizeof(info));
@@ -232,7 +231,18 @@ void initScreen(void){
 }
 
 /**
-  * @brief  IRQ Handler della periferica GPIO_0
+  * @brief  IRQ Handler della periferica GPIO_0:
+  *			<br>Salva il valore del registro ISR.
+  *			<br>Azzera il registro ISR.
+  *			<br>Serve tutte le linee che hanno.
+  *			generato interrupt effettuando il toggle del
+  *			relativo led.
+  *			<br>Se durante l'esecuzione dovessero arrivare altre interruzioni
+  *			queste vanno a modificare nuovamente il registro ISR, facendo eseguire
+  *			nuovamente l' interrupt handler non appena questa termina.
+  * @param  ptr: puntatore all'indirizzo base della periferica ottenuto con la
+  *			mmap sul device file.
+  * @retval None
   */
 void APE_IRQHandler_0(void* ptr){
 
