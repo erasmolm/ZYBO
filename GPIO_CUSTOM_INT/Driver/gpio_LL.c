@@ -25,6 +25,7 @@
   *     @arg APE_IERF_REG
   *     @arg APE_ICRISR_REG
   * @param 	value: valore da scrivere nel registro
+  *	@retval None
   */
 void APE_writeValue32(uint32_t* addr,int offset,uint32_t value){
 	assert(((uint32_t)addr)%4 == 0);
@@ -46,6 +47,7 @@ void APE_writeValue32(uint32_t* addr,int offset,uint32_t value){
   *   Questo parametro può assumere i seguenti valori:
   *     @arg L
   *     @arg H
+  *	@retval None
   */
 void APE_writeValue16(uint32_t* addr,int offset,uint16_t value,int part){
 	assert(((uint32_t)addr)%4 == 0);
@@ -70,6 +72,7 @@ void APE_writeValue16(uint32_t* addr,int offset,uint16_t value,int part){
   *     @arg LH
   *     @arg HL
   *     @arg HH
+  *	@retval None
   */
 void APE_writeValue8(uint32_t* addr,int offset,uint8_t value,int part){
 	assert(((uint32_t)addr)%4 == 0);
@@ -87,6 +90,7 @@ void APE_writeValue8(uint32_t* addr,int offset,uint8_t value,int part){
   *     @arg APE_IERR_REG
   *     @arg APE_IERF_REG
   *     @arg APE_ICRISR_REG
+  *	@retval Il valore a 32 bit letto dal registro
   */
 uint32_t APE_readValue32(uint32_t* addr,int offset){
 	assert(((uint32_t)addr)%4 == 0);
@@ -108,6 +112,7 @@ uint32_t APE_readValue32(uint32_t* addr,int offset){
   *    Questo parametro può assumere i seguenti valori:
   *     @arg L
   *     @arg H
+  *	@retval Il valore a 16 bit letto dal registro
   */
 uint16_t APE_readValue16(uint32_t* addr,int offset, int part){
 	assert(((uint32_t)addr)%4 == 0);
@@ -133,6 +138,7 @@ uint16_t APE_readValue16(uint32_t* addr,int offset, int part){
   *     @arg LH
   *     @arg HL
   *     @arg HH
+  *	@retval Il valore a 8 bit letto dal registro
   */
 uint8_t APE_readValue8(uint32_t* addr,int offset, int part){
 	assert(((uint32_t)addr)%4 == 0);
@@ -154,6 +160,7 @@ uint8_t APE_readValue8(uint32_t* addr,int offset, int part){
   *     @arg APE_ICRISR_REG
   * @param 	val: valore da impostare
   * @param 	pos: posizione in cui impostare il valore
+  *	@retval None
   */
 void APE_setBit(uint32_t* addr,int offset,bool val,int pos){
 	uint32_t mask = 0x1 << pos;
@@ -177,6 +184,7 @@ void APE_setBit(uint32_t* addr,int offset,bool val,int pos){
   *     @arg APE_IERF_REG
   *     @arg APE_ICRISR_REG
   * @param 	pos: posizione in cui impostare il valore
+  *	@retval None
   */
 void APE_toggleBit(uint32_t* addr,int offset,int pos){
 	uint32_t mask = 0x1 << pos;
