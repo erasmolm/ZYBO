@@ -5,23 +5,33 @@
   * @version V2.0
   * @date    26-Giugno-2017
   * @brief   Questo file implementa le Interrupt Handler delle
-  * 		 periferiche GPIO.
+  * 	     periferiche GPIO. Mediante le define nel file defines.h e' possibile
+  *	     specificare di quali moduli abilitare la gestione delle interrupt.
   ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
 #include "gpio_it.h"
 
+/**
+  * @brief Se il modulo bottoni e' abilitato, include la rispettiva libreria.
+  */
 #ifdef APE_BTN_MOD_ENABLED
 	#include "button.h"
 #endif /* MODULO BOTTONI ABILITATO */
 
+/**
+  * @brief Se il modulo switch e' abilitato, include la rispettiva libreria.
+  */
 #ifdef APE_SW_MOD_ENABLED
 	#include "switch.h"
 #endif /* MODULO SWITCH ABILITATO */
 
 /**
-  * @brief  IRQ Handler della periferica GPIO_0
+  * @brief  IRQ Handler della periferica GPIO_0, chiama le
+  *	    callback di tutti i pin che hanno generato interrupt.
+  * @param  None
+  * @retval None
   */
 void APE_IRQHandler_0(void){
 
@@ -64,7 +74,9 @@ void APE_IRQHandler_0(void){
 
 /**
   * @brief  IRQ Handler della periferica GPIO_X
-  * @Note	Sostituire X con il numero della GPIO
+  * @note   Sostituire X con il numero della GPIO
+  * @param  None
+  * @retval None
   */
 /*
 void APE_IRQHandler_X(void){
