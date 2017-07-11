@@ -127,7 +127,7 @@ void loop(void){
 }
 
 /**
-  * @brief  Callback associata al bottone 0
+  * @brief  Callback associata al bottone 0, effettua toggle del led 0.
   * @param  None
   * @retval None
   */
@@ -136,7 +136,7 @@ void APE_BTN0_Callback(void){
 }
 
 /**
-  * @brief  Callback associata al bottone 1
+  * @brief  Callback associata al bottone 1, effettua toggle del led 1.
   * @param  None
   * @retval None
   */
@@ -145,7 +145,7 @@ void APE_BTN1_Callback(void){
 }
 
 /**
-  * @brief  Callback associata al bottone 2
+  * @brief  Callback associata al bottone 2, effettua toggle del led 2.
   * @param  None
   * @retval None
   */
@@ -154,7 +154,7 @@ void APE_BTN2_Callback(void){
 }
 
 /**
-  * @brief  Callback associata al bottone 3
+  * @brief  Callback associata al bottone 3, effettua toggle del led 3.
   * @param  None
   * @retval None
   */
@@ -163,7 +163,7 @@ void APE_BTN3_Callback(void){
 }
 
 /**
-  * @brief  Callback associata allo switch 0
+  * @brief  Callback associata allo switch 0, effettua toggle del led 0.
   * @param  None
   * @retval None
   */
@@ -172,7 +172,7 @@ void APE_SW0_Callback(void){
 }
 
 /**
-  * @brief  Callback associata allo switch 1
+  * @brief  Callback associata allo switch 1, effettua toggle del led 1.
   * @param  None
   * @retval None
   */
@@ -181,7 +181,7 @@ void APE_SW1_Callback(void){
 }
 
 /**
-  * @brief  Callback associata allo switch 2
+  * @brief  Callback associata allo switch 2, effettua toggle del led 2.
   * @param  None
   * @retval None
   */
@@ -190,7 +190,7 @@ void APE_SW2_Callback(void){
 }
 
 /**
-  * @brief  Callback associata allo switch 3
+  * @brief  Callback associata allo switch 3, effettua toggle del led 3.
   * @param  None
   * @retval None
   */
