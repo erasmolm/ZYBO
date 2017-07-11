@@ -467,7 +467,7 @@ begin
 	end process;
      
 --------------------------------------------------------------------------------------------------------------------------------|
---!  USER LOGIC:                                                                                                                |
+--  USER LOGIC:                                                                                                                |
 --------------------------------------------------------------------------------------------------------------------------------|  
 
 
@@ -478,7 +478,8 @@ begin
     --! Il segnale edge_detected proviene dall'output dell'edge_detector.
     edge_and_dir <= edge_detected and slv_reg1;
 
-    --! @brief Il registro ISR (periph_isr) è gestito in base ai valori di ICR (slv_reg4) e di edge_and_dir:
+    --! @brief Process di gestione dei registri ISR e ICR.
+    --! <br>Il registro ISR (periph_isr) è gestito in base ai valori di ICR (slv_reg4) e di edge_and_dir:
     --! <br>Se periph_isr(i) = '1', allora è posto a '0' se slv_reg4(i) = '1'.
     --! <br>Se periph_isr(i) = '0', allora è posto a '1' se edge_and_dir(i)= '1'.
     ICRISR_management: process(periph_isr,slv_reg4,edge_and_dir,S_AXI_ACLK) is
