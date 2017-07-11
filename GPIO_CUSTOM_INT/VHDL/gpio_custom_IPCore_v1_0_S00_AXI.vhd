@@ -179,9 +179,19 @@ architecture arch_imp of gpio_custom_IPCore_v1_0_S00_AXI is
                reset_n    : in  STD_LOGIC;
                s_out      : out STD_LOGIC);
     end component;
-    
+	    
+     
+--------------------------------------------------------------------------------------------------------------------------------|
+--  SEGNALI UTENTE:                                                                                                                |
+--------------------------------------------------------------------------------------------------------------------------------|  
+
+    --!
     signal periph_read      :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+
+    --!
     signal periph_isr       :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+
+    
     signal temp_periph_isr  :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
     signal edge_and_dir     :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
     signal edge_detected    :std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
@@ -471,11 +481,11 @@ begin
 --------------------------------------------------------------------------------------------------------------------------------|  
 
 
-    --! @brief Il segnale gpio_int è ottenuto mediante la OR di tutti i bit del registro ISR (periph_isr).
+    -- Il segnale gpio_int è ottenuto mediante la OR di tutti i bit del registro ISR (periph_isr).
     gpio_int <= or_reduce(periph_isr);
     
-    --! @brief edge_and_dir abilita a leggere o meno il fronte in base al registro DIR (slv_reg1).
-    --! Il segnale edge_detected proviene dall'output dell'edge_detector.
+    -- edge_and_dir abilita a leggere o meno il fronte in base al registro DIR (slv_reg1).
+    -- Il segnale edge_detected proviene dall'output dell'edge_detector.
     edge_and_dir <= edge_detected and slv_reg1;
 
     --! @brief Process di gestione dei registri ISR e ICR.
@@ -505,7 +515,7 @@ begin
     
     end process;
     
-    --!feedback
+    -- feedback
     periph_isr <= temp_periph_isr;
     
     --! @brief Array di edge_detector per rilevare il rising/falling edge del registro DATA (slv_reg0).
