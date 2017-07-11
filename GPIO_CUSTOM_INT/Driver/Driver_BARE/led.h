@@ -42,6 +42,9 @@ typedef enum{
 */
 typedef struct led_t led_t;
 
+/**
+  * @brief struttura che racchiude tutte le funzioni del tipo led_t
+*/
 struct led_t{
 
 	void (*enable)(led_t* self);
