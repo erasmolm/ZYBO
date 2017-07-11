@@ -42,6 +42,9 @@ typedef enum{
 */
 typedef struct btn_t btn_t;
 
+/**
+  * @brief struttura che racchiude tutte le funzioni del tipo btn_t
+*/
 struct btn_t{
 
 	void (*enable)(btn_t* self);
