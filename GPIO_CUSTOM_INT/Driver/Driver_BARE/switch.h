@@ -50,6 +50,9 @@ typedef enum{
 */
 typedef struct switch_t switch_t;
 
+/**
+  * @brief struttura che racchiude tutte le funzioni del tipo switch_t
+*/
 struct switch_t{
 
 	void (*enable)(switch_t* self);
