@@ -4,8 +4,13 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo file definisce le Interrupt Handler delle
-  * 		 periferiche GPIO.
+  * @brief   Questo file definisce le Interrupt Handler della
+  * 		 periferica APE_GPIO usate dal driver BARE_METAL.
+  *	@addtogroup DRIVER
+  * @{
+  * @addtogroup BARE_METAL
+  * @{
+  *
   ******************************************************************************
   */
 
@@ -22,3 +27,5 @@ void APE_IRQHandler_0(void);
 /*void APE_IRQHandler_X(void);*/
 
 #endif /* SRC_GPIO_IT_H_ */
+/**@}*/
+/**@}*/

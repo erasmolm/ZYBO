@@ -13,7 +13,8 @@
   * @{
   * @addtogroup DEFINES
   * @{
-  * @brief   Questo modulo definisce le macro utilizzate dai bottoni, led
+  * @brief   Questo modulo e' utilizzato sia dal driver UIO che quello BARE_METAL.
+  *			 Il modulo definisce le macro utilizzate dai bottoni, led
   * 		 e switch. Modificando tali macro è possibile mappare questi ultimi
   * 		 su nibble differenti e/o dichiarare l'indirizzo base di più
   * 		 periferiche GPIO differenti.

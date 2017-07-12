@@ -4,16 +4,19 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo programma testa le interrupt lanciate dai bottoni e dagli
-  *          switch. Ad ogni bottone e ad ogni switch corrisponde una callback,
-  *          che effettua il toggle del led alla medesima posizione.
+  * @brief   File che implementa il driver BARE_METAL per la periferica APE_GPIO.
   *	@addtogroup DRIVER
   * @{
-  * @addtogroup NO_DRIVER
+  * @addtogroup BARE_METAL
   * @{
-  * @brief   Questo modulo fornisce le funzioni di basso livello per
-  *			 l'accesso ai registri di una periferica GPIO con gestione delle
-  *			 interrupt.
+  * @brief   Questo modulo fornisce un driver bare-metal per la periferica APE_GPIO. 
+  *	@details Il programma testa le interrupt lanciate dai bottoni e dagli
+  *          switch. Ad ogni bottone e ad ogni switch corrisponde una callback,
+  *          che effettua il toggle del led alla medesima posizione.
+  *			 Le funzioni di callback sono dichiarate __weak, pertanto l'utente 
+  *			 puo' ridefinirle qualora abbia attivato le interrupt per una specifica linea.
+  *			 Le callback vengono poi invocate dalla IRQ_Handler che invece definita
+  *			 nel file gpio_it.h.
   ******************************************************************************
   */
 

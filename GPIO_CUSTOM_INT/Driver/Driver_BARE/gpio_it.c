@@ -4,9 +4,16 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo file implementa le Interrupt Handler delle
-  * 	     periferiche GPIO. Mediante le define nel file defines.h e' possibile
-  *	     specificare di quali moduli abilitare la gestione delle interrupt.
+  * @brief   Questo file implementa le Interrupt Handler della
+  * 	     periferica APE_GPIO. Mediante le define nel file defines.h e' possibile
+  *	     	specificare di quali moduli abilitare la gestione delle interrupt.
+  *		     E' presente anche un template per definire un' opportuna IRQ Handler
+  *			 nel caso vi siano eventuali modifiche dell'hardware.
+  *	@addtogroup DRIVER
+  * @{
+  * @addtogroup BARE_METAL
+  * @{
+  *
   ******************************************************************************
   */
 
@@ -92,3 +99,5 @@ void APE_IRQHandler_X(void){
 	APE_writeValue32();
 }
 */
+/**@}*/
+/**@}*/
