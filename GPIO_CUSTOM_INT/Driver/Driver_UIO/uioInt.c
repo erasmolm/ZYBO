@@ -4,13 +4,24 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V1.0
   * @date    03-Luglio-2017
+  * @brief   File del Driver UIO user-space per linux della periferica APE_GPIO.
+  *
+  *	@addtogroup DRIVER
+  * @{
+  * @addtogroup UIO
+  * @{
   * @brief   Driver UIO user-space per linux della periferica GPIO custom.
-  * 		 <br>Il driver ha 3 modalità:
-  * 		 <br>IN: generica lettura dei registri della periferica con utilizzo
+  * @details Il driver ha 3 modalità:
+  * 		 - IN: generica lettura dei registri della periferica con utilizzo
   * 		 	 delle interrupt.
-  * 		 <br>OUT: generica scrittura verso i registri della periferica.
-  * 		 <br>TEST: il driver testa le interrupt effettuando il toggle di un led
+  * 		 - OUT: generica scrittura verso i registri della periferica.
+  * 		 - TEST: il driver testa le interrupt effettuando il toggle di un led
   * 		 	 alla pressione/rilascio di un bottone e/o toggling di uno switch.
+  *
+  * La modalita' di esecuzione e selezionata in base agli argomenti forniti a riga
+  * di comando. La modalita' di default e <b>TEST</b>, altrimenti utilizzare:
+  * - i: per la modalita' <b>IN</b>.
+  * - o: per la modalita' <b>OUT</b>.
   ******************************************************************************
   */
 
@@ -124,7 +135,7 @@ int main(int argc, char *argv[]){
 				perror("write");
 				close(fd);
 				exit(EXIT_FAILURE);
-			}	
+			}
 		}
 	}
 
@@ -281,4 +292,4 @@ void APE_IRQHandler_0(void* ptr){
 	/* ----------------------------- */
 
 }
-
+/**@}*/
