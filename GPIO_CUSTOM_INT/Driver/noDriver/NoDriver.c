@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
-  * @file    noDriver.c
+  * @file    NoDriver.c
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V1.0
   * @date    03-Luglio-2017
-  * @brief   File del Driver UIO user-space per linux della periferica APE_GPIO.
+  * @brief   File del Driver NO_DRIVER user-space per linux della periferica APE_GPIO.
   *
   *	@addtogroup DRIVER
   * @{
@@ -15,11 +15,17 @@
   *			 mediante la syscall mmap, si hanno 3 modalità di esecuzione:
   * 		 - IN: generica lettura dei registri della periferica.
   * 		 - OUT: generica scrittura verso i registri della periferica.
-  * 		 - TEST: il driver testa le interrupt effettuando il toggle di un led
-  * 		 	 alla pressione/rilascio di un bottone e/o toggling di uno switch.
+  * 		 - TEST: il driver fa uso delle librerie LIB_OBJECTS e cicla sul valore
+  *					del registro dato. Sul nibble dedicato ai led viene assegnato il
+  *					il valore letto dai bottoni in AND con quello degli switch.
   *
-  * La modalita' di esecuzione e selezionata in base agli argomenti forniti a riga
-  * di comando. La modalita' di default e <b>TEST</b>, altrimenti utilizzare:
+  * Il driver fa uso delle librerie LIB_OBJECTS e delle LOW_LEVEL, il modulo define
+  *	e' configurato nella stessa modalita' per il driver UIO, pertanto e' necessario
+  *	definire runtime il base address del dispositivo assegnandogli il valore ottenuto
+  *	dopo la chiamata a mmap.
+  *
+  * La modalita' di esecuzione e' selezionata in base agli argomenti forniti a riga
+  * di comando. La modalita' di default e' <b>TEST</b>, altrimenti utilizzare:
   * - i: per la modalita' <b>IN</b>.
   * - o: per la modalita' <b>OUT</b>.
   ******************************************************************************
@@ -38,8 +44,6 @@
 #include "button.h"
 #include "led.h"
 #include "switch.h"
-
-/* Macro ---------------------------------------------------------------------*/
 
 /* Typedef -------------------------------------------------------------------*/
 typedef enum {
@@ -130,7 +134,7 @@ int main(int argc, char *argv[]){
 	if(direction == TEST) {
 		printf("\n\n Modalità TEST \n\n");
 
-		/*Dichiarazione degli handler*/
+		/*Dichiarazione degli handler e variabili di stato*/
 		btn_t btn_handler;
 		switch_t sw_handler;
 		led_t led_handler;
