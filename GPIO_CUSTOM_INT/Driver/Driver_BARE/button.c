@@ -5,6 +5,11 @@
   * @version V2.0
   * @date    26-Giugno-2017
   * @brief   Questo file implementa le funzioni di gestione dei bottoni
+  *
+  *	@addtogroup LIB_OBJECTS
+  * @{
+  * @addtogroup BUTTON
+  * @{
   ******************************************************************************
   */
 
@@ -155,7 +160,7 @@ void BTN_clearISR(btn_t* self,uint32_t int_mask){
 
 /**
   * @brief  dichiarazione debole della callback del bottone 0
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -166,7 +171,7 @@ void APE_BTN0_Callback(void){
 
 /**
   * @brief  dichiarazione debole della callback del bottone 0
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -177,7 +182,7 @@ void APE_BTN1_Callback(void){
 
 /**
   * @brief  dichiarazione debole della callback del bottone 0
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -188,7 +193,7 @@ void APE_BTN2_Callback(void){
 
 /**
   * @brief  dichiarazione debole della callback del bottone 0
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -212,3 +217,4 @@ void BTN_Init(btn_t* self){
 	self->readISR = &BTN_readISR;
 	self->clearISR = &BTN_clearISR;
 }
+/**@}*/

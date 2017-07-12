@@ -18,7 +18,10 @@
 --!          Questo perchè, nell'ottica di dover inserire il componente in un contesto piu' ampio,
 --!          permette di evitare che un eventuale process campioni il segnale mentre sta variando.
 --!          Il comportamente e' realizzato mediante due flip-flop in cascata come riportato nello schema.
+--!
+--! <br>
 --! @image html edge_detector.png
+--! @image latex edge_detector_latex.png
 ----------------------------------------------------------------------------------
 
 

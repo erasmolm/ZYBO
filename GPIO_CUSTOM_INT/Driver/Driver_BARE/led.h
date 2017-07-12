@@ -5,6 +5,13 @@
   * @version V2.0
   * @date    26-Giugno-2017
   * @brief   Questo file definisce le funzioni di gestione dei led
+  *
+  *	@addtogroup LIB_OBJECTS
+  * @{
+  * @addtogroup LED
+  * @{
+  * @brief Questo modulo fornisce un'interfaccia di alto livello per
+  * 	   utilizzare i led.
   ******************************************************************************
   */
 #ifndef SRC_LED_H_
@@ -18,7 +25,7 @@
 
 /**
   * @brief maschere dei led
-*/  
+*/
 #define LED0_MASK	(uint32_t)(0x1 << LED0)	/*!< maschera del led 0*/
 #define LED1_MASK	(uint32_t)(0x1 << LED1)	/*!< maschera del led 1*/
 #define LED2_MASK	(uint32_t)(0x1 << LED2)	/*!< maschera del led 2*/
@@ -63,3 +70,4 @@ struct led_t{
 void LED_Init(led_t*);
 
 #endif /* SRC_LED_H_ */
+/**@}*/

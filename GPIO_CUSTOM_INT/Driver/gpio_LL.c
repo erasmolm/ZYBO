@@ -4,9 +4,15 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo file implementa le funzioni di basso livello per
-  *          l'accesso ai registri di una periferica GPIO con gestione delle
-  *          interrupt.
+  * @brief   Questo file implementa le funzioni del modulo GPIO_LL.
+  *
+  *	@addtogroup LOW_LEVEL
+  * @{
+  * @addtogroup GPIO_LL
+  * @{
+  * @brief   Questo modulo fornisce le funzioni di basso livello per
+  *			 l'accesso ai registri di una periferica GPIO con gestione delle
+  *			 interrupt.
   ******************************************************************************
   */
 
@@ -148,7 +154,7 @@ uint8_t APE_readValue8(uint32_t* addr,int offset, int part){
 }
 
 /**
-  * @brief  imposta un bit ad un determinato valore in una 
+  * @brief  imposta un bit ad un determinato valore in una
   * 		particolare posizione di un registro
   * @param 	addr: indirizzo base del registro
   * @param  offset: offset sommato all'indirizzo base.
@@ -192,3 +198,4 @@ void APE_toggleBit(uint32_t* addr,int offset,int pos){
 
 	APE_writeValue32(addr,offset,APE_readValue32(addr,offset) ^ mask);
 }
+/**@}*/

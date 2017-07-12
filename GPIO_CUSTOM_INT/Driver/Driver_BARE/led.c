@@ -5,6 +5,11 @@
   * @version V2.0
   * @date    26-Giugno-2017
   * @brief   Questo file implementa le funzioni di gestione dei led
+  *
+  *	@addtogroup LIB_OBJECTS
+  * @{
+  * @addtogroup LED
+  * @{
   ******************************************************************************
   */
 
@@ -120,3 +125,4 @@ void LED_Init(led_t* self){
 	self->toggle = &LED_toggle;
 	self->setLeds = &LED_setLeds;
 }
+/**@}*/

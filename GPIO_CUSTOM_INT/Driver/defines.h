@@ -8,6 +8,15 @@
   * 		 e switch. Modificando tali macro è possibile mappare questi ultimi
   * 		 su nibble differenti e/o dichiarare l'indirizzo base di più
   * 		 periferiche GPIO differenti.
+  *
+  *	@addtogroup LOW_LEVEL
+  * @{
+  * @addtogroup DEFINES
+  * @{
+  * @brief   Questo modulo definisce le macro utilizzate dai bottoni, led
+  * 		 e switch. Modificando tali macro è possibile mappare questi ultimi
+  * 		 su nibble differenti e/o dichiarare l'indirizzo base di più
+  * 		 periferiche GPIO differenti.
   ******************************************************************************
   */
 
@@ -17,7 +26,7 @@
 /* ######################## Configurazione Driver ########################### */
 /**
   * @brief Seleziona il tipo di driver da implementare
-  * @Note  <br>/!\ Nel caso UIO è necessario ridefinire runtime il base address dopo la mmap.
+  * @note  <br>/!\ Nel caso UIO è necessario ridefinire runtime il base address dopo la mmap.
   */
 //#define DRIVER_UIO
 #define DRIVER_BARE
@@ -82,3 +91,4 @@
 #endif /* MODULO SWITCH ABILITATO*/
 
 #endif /* SRC_DEFINES_H_ */
+/**@}*/

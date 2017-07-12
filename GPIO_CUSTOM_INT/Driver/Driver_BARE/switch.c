@@ -5,6 +5,11 @@
   * @version V2.0
   * @date    01-Luglio-2017
   * @brief   Questo file implementa le funzioni di gestione degli switch
+  *
+  *	@addtogroup LIB_OBJECTS
+  * @{
+  * @addtogroup SWITCH
+  * @{
   ********************************************************************************
   */
 
@@ -167,7 +172,7 @@ void SW_clearISR(switch_t* self,uint32_t int_mask){
 
 /**
   * @brief  dichiarazione debole della callback dello switch 0
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -178,7 +183,7 @@ void APE_SW0_Callback(void){
 
 /**
   * @brief  dichiarazione debole della callback dello switch 1
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -189,7 +194,7 @@ void APE_SW1_Callback(void){
 
 /**
   * @brief  dichiarazione debole della callback dello switch 2
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -200,7 +205,7 @@ void APE_SW2_Callback(void){
 
 /**
   * @brief  dichiarazione debole della callback dello switch 3
-  * @Note	questa funzione deve essere ridefinita dall'utente
+  * @note	questa funzione deve essere ridefinita dall'utente
   * 		nel programma principale
   * @retval	None
   */
@@ -225,3 +230,4 @@ void SW_Init(switch_t* self){
 	self->readISR = &SW_readISR;
 	self->clearISR = &SW_clearISR;
 }
+/**@}*/

@@ -9,6 +9,7 @@
 --! @{
 --! @addtogroup APE_GPIO_AXI
 --! @{
+--! @brief Componente periferica GPIO custom su bus AXI 4 Lite.
 --! @mainpage
 --! @brief Periferica GPIO custom su bus AXI 4 Lite.
 --!

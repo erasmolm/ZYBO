@@ -5,6 +5,13 @@
   * @version V2.0
   * @date    26-Giugno-2017
   * @brief   Questo file definisce le funzioni di gestione dei bottoni
+  *
+  *	@addtogroup LIB_OBJECTS
+  * @{
+  * @addtogroup BUTTON
+  * @{
+  * @brief Questo modulo fornisce un'interfaccia di alto livello per
+  * 	   utilizzare i bottoni.
   ******************************************************************************
   */
 #ifndef SRC_BUTTON_H_
@@ -63,3 +70,4 @@ struct btn_t{
 void BTN_Init(btn_t*);
 
 #endif /* SRC_BUTTON_H_ */
+/**@}*/

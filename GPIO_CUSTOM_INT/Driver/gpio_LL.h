@@ -4,7 +4,13 @@
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V2.0
   * @date    26-Giugno-2017
-  * @brief   Questo file definisce le funzioni di basso livello per
+  * @brief   Questo file definisce le funzioni del modulo GPIO_LL.
+  *
+  *	@addtogroup LOW_LEVEL
+  * @{
+  * @addtogroup GPIO_LL
+  * @{
+  * @brief   Questo modulo fornisce le funzioni di basso livello per
   *			 l'accesso ai registri di una periferica GPIO con gestione delle
   *			 interrupt.
   ******************************************************************************
@@ -24,18 +30,22 @@
 
 /**
   * @brief selezione parte del registro per indirizzamento
-  *		   a 16 bit a partire da destra
-  *		    _________________ _________________
-  *		   |________H________|________L________|
-  *
+  *		   a 16 bit a partire da destra.
+  *	<table>
+  * <tr><th>H</th><th>L</th></tr>
+  * <tr><td>31-16</td><td>15-0</td></tr>
+  * </table>
  */
 #define L	0	/*!<parte meno significativa*/
 #define H	1	/*!<parte più significativa*/
 
 /**
   * @brief selezione parte del registro per l'indirizzamento
-  *		    ________ ________ ________ ________
-  *		   |___HH___|___HL___|___LH___|___LL___|
+  *			a 8 bit a partire da destra.
+  *	<table>
+  * <tr><th>HH</th><th>HL</th><th>LH</th><th>LL</th></tr>
+  * <tr><td>31-24</td><td>23-16</td><td>15-8</td><td>7-0</td></tr>
+  * </table>
   *
  */
 #define LL	0	/*!<primo byte*/
@@ -72,3 +82,4 @@ void APE_setBit(uint32_t*,int,bool,int);
 void APE_toggleBit(uint32_t*,int,int);
 
 #endif /* SRC_GPGPIO_LL_H_ */
+/**@}*/

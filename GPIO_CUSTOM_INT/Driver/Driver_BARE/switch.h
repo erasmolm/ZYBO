@@ -5,6 +5,13 @@
   * @version V2.0
   * @date    01-Luglio-2017
   * @brief   Questo file definisce le funzioni di gestione degli switch
+  *
+  *	@addtogroup LIB_OBJECTS
+  * @{
+  * @addtogroup SWITCH
+  * @{
+  * @brief Questo modulo fornisce un'interfaccia di alto livello per
+  * 	   utilizzare gli switch.
   ******************************************************************************
   */
 #ifndef SRC_SWITCH_H_
@@ -72,3 +79,4 @@ struct switch_t{
 void SW_Init(switch_t*);
 
 #endif /* SRC_SWITCH_H_ */
+/**@}*/
