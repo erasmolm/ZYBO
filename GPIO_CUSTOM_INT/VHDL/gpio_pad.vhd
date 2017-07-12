@@ -1,51 +1,47 @@
 ----------------------------------------------------------------------------------
--- Company: Gruppo 5
--- Engineer: Alfonso, Pierluigi, Erasmo (APE)
--- 
--- Create Date: 22.06.2017 12:44:08
--- Design Name: 
--- Module Name: gpio_pad - Dataflow
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+--! @file   gpio_pad.vhd
+--  Company: Gruppo 5
+--! @author Alfonso, Pierluigi, Erasmo (APE)
+--!
+--! @date 20.06.2017 20:15:38
+--!
+--! @addtogroup APE_GPIO
+--! @{
+--! @addtogroup gpio_pad
+--! @{
+--!
+--! @brief Componente gpio singolo.
+--! @details Rappresenta il comportamento di un singolo
+--!          pad gpio input-output, pilotato dalla logica tristate mediante il segnale in ingresso
+--!          <b>dir</b>:
+--!          - Se pari a '1', il valore in ingresso a pad viene riportato sull'uscita <b>read</b>.
+--!          - Se pari a '0', il valore in ingresso a <b>write</b> viene riportato sul <b>pad</b> e su <b>read</b>.
 ----------------------------------------------------------------------------------
-
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
+--! Entity gpio_pad
 entity gpio_pad is
-    Port ( write : in STD_LOGIC;
-           dir : in STD_LOGIC;
-           read : out STD_LOGIC;
-           pad : inout STD_LOGIC);
+    Port ( write : in STD_LOGIC;--! Porto di scrittura dal PS verso l'esterno.
+           dir : in STD_LOGIC;--! Porto di selezione della direzione.
+           read : out STD_LOGIC; --!Porto di lettura dall'esterno verso al PS.
+           pad : inout STD_LOGIC);--!Pad input-output.
 end gpio_pad;
 
 architecture DataFlow of gpio_pad is
 
 begin
 
+--!In base al valore di <b>dir</b>:
+--! - Se pari a '1', il valore in ingresso a pad viene riportato sull'uscita <b>read</b>.
+--! - Se pari a '0', il valore in ingresso a <b>write</b> viene riportato sul <b>pad</b> e su <b>read</b>.
 with dir select pad <=
     'Z' when '1',
     write when others;
-    
+
 read <= pad;
 
 end DataFlow;
+--! @}
+--! @}

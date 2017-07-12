@@ -1,28 +1,24 @@
 ----------------------------------------------------------------------------------
--- Company: Gruppo 5
--- Engineer: Alfonso, Pierluigi, Erasmo (APE)
--- 
--- Create Date: 20.06.2017 20:15:38
--- Design Name: 
--- Module Name: gpio_custom_IPCore_v1_0 - Arch_imp
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+--! @file   APE_GPIO_TOP.vhd
+--  Company: Gruppo 5
+--! @author Alfonso, Pierluigi, Erasmo (APE)
+--!
+--! @date 20.06.2017 20:15:38
+--!
+--! @addtogroup APE_GPIO
+--! @{
+--! @addtogroup APE_GPIO_TOP
+--! @{
+--!
+--! @brief Componente top module della periferica GPIO custom.
+--!
 ----------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity gpio_custom_IPCore_v1_0 is
+entity APE_GPIO_TOP is
 	generic (
 		-- Users to add parameters here
         width : natural := 4;
@@ -65,12 +61,12 @@ entity gpio_custom_IPCore_v1_0 is
 		s00_axi_rvalid	: out std_logic;
 		s00_axi_rready	: in std_logic
 	);
-end gpio_custom_IPCore_v1_0;
+end APE_GPIO_TOP;
 
-architecture arch_imp of gpio_custom_IPCore_v1_0 is
+architecture arch_imp of APE_GPIO_TOP is
 
 	-- component declaration
-	component gpio_custom_IPCore_v1_0_S00_AXI is
+	component APE_GPIO_AXI is
 		generic (
 		width : natural := 4;
 		C_S_AXI_DATA_WIDTH	: integer	:= 32;
@@ -101,12 +97,12 @@ architecture arch_imp of gpio_custom_IPCore_v1_0 is
 		S_AXI_RVALID	: out std_logic;
 		S_AXI_RREADY	: in std_logic
 		);
-	end component gpio_custom_IPCore_v1_0_S00_AXI;
+	end component APE_GPIO_AXI;
 
 begin
 
 -- Instantiation of Axi Bus Interface S00_AXI
-gpio_custom_IPCore_v1_0_S00_AXI_inst : gpio_custom_IPCore_v1_0_S00_AXI
+APE_GPIO_AXI_inst : APE_GPIO_AXI
 	generic map (
 	    width => width,
 		C_S_AXI_DATA_WIDTH	=> C_S00_AXI_DATA_WIDTH,
@@ -114,7 +110,7 @@ gpio_custom_IPCore_v1_0_S00_AXI_inst : gpio_custom_IPCore_v1_0_S00_AXI
 	)
 	port map (
 	    pad => pad,
-	    gpio_int => gpio_int,   
+	    gpio_int => gpio_int,
 		S_AXI_ACLK	=> s00_axi_aclk,
 		S_AXI_ARESETN	=> s00_axi_aresetn,
 		S_AXI_AWADDR	=> s00_axi_awaddr,
@@ -135,7 +131,7 @@ gpio_custom_IPCore_v1_0_S00_AXI_inst : gpio_custom_IPCore_v1_0_S00_AXI
 		S_AXI_RDATA	=> s00_axi_rdata,
 		S_AXI_RRESP	=> s00_axi_rresp,
 		S_AXI_RVALID	=> s00_axi_rvalid,
-		S_AXI_RREADY	=> s00_axi_rready	
+		S_AXI_RREADY	=> s00_axi_rready
 	);
 
 	-- Add user logic here
@@ -143,3 +139,5 @@ gpio_custom_IPCore_v1_0_S00_AXI_inst : gpio_custom_IPCore_v1_0_S00_AXI
 	-- User logic ends
 
 end arch_imp;
+--! @}
+--! @}
