@@ -80,3 +80,4 @@ void SW_Init(switch_t*);
 
 #endif /* SRC_SWITCH_H_ */
 /**@}*/
+/**@}*/

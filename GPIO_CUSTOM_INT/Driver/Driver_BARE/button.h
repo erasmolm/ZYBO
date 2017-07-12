@@ -71,3 +71,4 @@ void BTN_Init(btn_t*);
 
 #endif /* SRC_BUTTON_H_ */
 /**@}*/
+/**@}*/

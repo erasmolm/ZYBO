@@ -71,3 +71,4 @@ void LED_Init(led_t*);
 
 #endif /* SRC_LED_H_ */
 /**@}*/
+/**@}*/

@@ -7,6 +7,13 @@
   * @brief   Questo programma testa le interrupt lanciate dai bottoni e dagli
   *          switch. Ad ogni bottone e ad ogni switch corrisponde una callback,
   *          che effettua il toggle del led alla medesima posizione.
+  *	@addtogroup DRIVER
+  * @{
+  * @addtogroup NO_DRIVER
+  * @{
+  * @brief   Questo modulo fornisce le funzioni di basso livello per
+  *			 l'accesso ai registri di una periferica GPIO con gestione delle
+  *			 interrupt.
   ******************************************************************************
   */
 
@@ -197,5 +204,5 @@ void APE_SW2_Callback(void){
 void APE_SW3_Callback(void){
 	l.toggle(&l,LED3);
 }
-
-
+/**@}*/
+/**@}*/

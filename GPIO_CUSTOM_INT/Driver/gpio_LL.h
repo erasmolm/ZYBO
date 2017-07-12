@@ -83,3 +83,4 @@ void APE_toggleBit(uint32_t*,int,int);
 
 #endif /* SRC_GPGPIO_LL_H_ */
 /**@}*/
+/**@}*/

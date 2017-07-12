@@ -199,3 +199,4 @@ void APE_toggleBit(uint32_t* addr,int offset,int pos){
 	APE_writeValue32(addr,offset,APE_readValue32(addr,offset) ^ mask);
 }
 /**@}*/
+/**@}*/

@@ -231,3 +231,4 @@ void SW_Init(switch_t* self){
 	self->clearISR = &SW_clearISR;
 }
 /**@}*/
+/**@}*/
