@@ -50,6 +50,7 @@ struct class *APE_GPIOK_class;
 static int APE_GPIOK_open(struct inode *, struct file *);
 static int APE_GPIOK_release(struct inode *, struct file *);
 static ssize_t APE_GPIOK_read(struct file *, char *, size_t , loff_t *);
+static ssize_t APE_GPIOK_write(struct file *, const char *, size_t , loff_t *);
 static unsigned int APE_GPIOK_poll(struct file *filp, poll_table *wait);
 static irqreturn_t APE_GPIOK_handler(int irq, struct pt_regs * regs);
 
@@ -59,20 +60,20 @@ static irqreturn_t APE_GPIOK_handler(int irq, struct pt_regs * regs);
 struct APE_GPIOK_dev {
 	unsigned short current_pointer;	/*!< TODO*/
 	unsigned int size;				/*!< Dimensione della memoria da associare al device*/
-	struct resource res;			/*!< TODO*/
+	struct resource res;			/*!< Struttura della risorsa device rappresentata in memoria, contiene start e end*/
 
 	struct cdev cdev;				/*!< Struttura char device interna al kernel*/
 	char name[20];					/*!< Nome del driver (DRIVER_NAME)*/
 	unsigned long *base_addr;		/*!< Indirizzo base*/
 
 	int irq_number;					/*!< Numero della linea di interrupt*/
-	wait_queue_head_t read_cond;	/*!< Variabile condition per la read*/
-	wait_queue_head_t poll_cond;	/*!< Variabile condition per la poll*/
+	wait_queue_head_t read_queue;	/*!< Variabile condition per la read*/
+	wait_queue_head_t poll_queue;	/*!< Variabile condition per la poll*/
 
-	spinlock_t iNumInterrupts_sl;	/*!< Variabile lock contatore delle interrupt*/
+	spinlock_t num_interrupts_sl;	/*!< Variabile lock contatore delle interrupt*/
 	spinlock_t read_flag_sl;		/*!< Variabile lock per flag abilitazione lettura*/
 
-	int iNumInterrupts;				/*!< Contatore delle interruzioni avvenute*/
+	int num_interrupts;				/*!< Contatore delle interruzioni avvenute*/
 	int read_flag;					/*!< Flag di abilitazione lettura*/
 
 } *APE_GPIOK_devp;
@@ -85,6 +86,7 @@ struct file_operations APE_GPIOK_fops = {
 	.open = APE_GPIOK_open,			/*!< Metodo open del modulo*/
 	.release = APE_GPIOK_release,	/*!< Metodo release del modulo*/
 	.read = APE_GPIOK_read,			/*!< Metodo read del modulo*/
+	.write = APE_GPIOK_write,		/*!< Metodo write del modulo*/
 	.poll = APE_GPIOK_poll			/*!< Metodo poll del modulo*/
 };
 
@@ -92,12 +94,12 @@ struct file_operations APE_GPIOK_fops = {
   * @brief	Stuttura che identifica il device nel device-tree.
   */
 struct of_device_id APE_GPIOK_match[] = {
-	{.compatible = "APE_GPIOK"},	/*!< NB: La medesima stringa va copiata nel DTB*/
+	{.compatible = "APE_GPIOK"},	/*!< @note: La medesima stringa va copiata nel DTB*/
 	{},
 };
 
 /**
-  * @brief	Comunica allo spazio utente quale device è controllato dal modulo.
+  * @brief	Comunica allo spazio utente quale device e' controllato dal modulo.
   */
 MODULE_DEVICE_TABLE(of, APE_GPIOK_match);
 
@@ -109,10 +111,9 @@ MODULE_DEVICE_TABLE(of, APE_GPIOK_match);
   */
 int APE_GPIOK_open(struct inode *inode, struct file *file){
 
-	printk(KERN_INFO "APE_GPIOK_open\n");
-
-	/* Informazioni sul device*/
 	struct APE_GPIOK_dev *APE_GPIOK_devp;
+
+	printk(KERN_INFO "APE_GPIOK_open\n");
 
 	/* Tramite l'inode ricaviamo la struttura APE_GPIOK_dev che contiene
 	 * a sua volta la struttura cdev.
@@ -120,7 +121,7 @@ int APE_GPIOK_open(struct inode *inode, struct file *file){
 	APE_GPIOK_devp = container_of(inode->i_cdev, struct APE_GPIOK_dev, cdev);
 
 	/* Ottenuto il puntatore alla struttura device, lo si salva nel campo
-	 * private_date della file structure per un più facile accesso.
+	 * private_date della file structure per un piu' facile accesso.
 	 */
 	file->private_data = APE_GPIOK_devp;
 
@@ -144,9 +145,11 @@ int APE_GPIOK_release(struct inode *inode, struct file *file){
 
 /**
   *	@brief	Trasferisce dati dal device verso un buffer user-space.
-  *	@param	buf: puntatore al buffer user-space in cui trasferire i dati letti
-  *	@param	count: lunghezza del trasferimento richiesto
-  *	@retval	1 sempre
+  * @param	file: puntatore alla struttura file.
+  *	@param	buf: puntatore al buffer user-space in cui trasferire i dati letti.
+  *	@param	count: lunghezza del trasferimento richiesto.
+  * @param	ppos: puntatore alla posizione corrente nel file.
+  *	@retval	1 sempre.
   */
 ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos){
 
@@ -161,15 +164,15 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 	offset = APE_GPIOK_devp->current_pointer;
 	read_addr = (APE_GPIOK_devp->base_addr) + offset;
 
-	/* Effettua la lettura in base alla modalità definita in f_flags*/
+	/* Effettua la lettura in base alla modalita' definita in f_flags*/
 	if((file->f_flags & O_NONBLOCK) == 0){
-		/* Modalità di lettura BLOCCANTE*/
+		/* Modalita' di lettura BLOCCANTE*/
 		printk(KERN_INFO "Lettura bloccante\n");
 
 		/* Effettua la wait sulla variabile condition*/
-		printk(KERN_INFO "Il processo %i (%s) viene bloccato\n",current->pid, current->comm);
-		wait_event_interruptible(APE_GPIOK_devp->read_cond, (APE_GPIOK_devp->read_flag & EN_BLOC_READ)==1);
-		printk(KERN_INFO "Il processo %i (%s) viene risvegliato\n",current->pid, current->comm);
+		printk(KERN_INFO "Il processo %i (%s) viene bloccato in lettura\n",current->pid, current->comm);
+		wait_event_interruptible(APE_GPIOK_devp->read_queue, (APE_GPIOK_devp->read_flag & EN_BLOC_READ)==1);
+		printk(KERN_INFO "Il processo %i (%s) viene risvegliato in lettura\n",current->pid, current->comm);
 
 		/* Acquisisci il lock*/
 		spin_lock(&APE_GPIOK_devp->read_flag_sl);
@@ -181,7 +184,7 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 		spin_unlock(&APE_GPIOK_devp->read_flag_sl);
 
 	} else {
-		/* Modalità di lettura NON BLOCCANTE*/
+		/* Modalita' di lettura NON BLOCCANTE*/
 		printk(KERN_INFO "Lettura non bloccante\n");
 
 		/* Acquisisce il lock*/
@@ -202,17 +205,55 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 	/* Incrementa la posizione*/
 	*ppos = *ppos + 1;
 
-	/* Trasferisce i date allo spazio utente*/
-	copy_to_user(buf, &value, 1);
+	/* Trasferisce i dati allo spazio utente*/
+	if(copy_to_user(buf, &value, 1)){
+		return -EFAULT;
+	}
 
 	return 1;//TODO migliorare la logica
 }
 
 /**
-  *	@brief	Verifica se un'operazione di read o write su uno o più file
-  *			descriptor sarà bloccante. Questa funzione deve:
-  *			-Chiamare poll_wait su una o più code;
-  *			-Restituire una maschera che indichi le operazioni che
+  *	@brief	Trasferisce dati buffer user-space al device.
+  * @param	file: puntatore alla struttura file.
+  *	@param	buf: puntatore al buffer user-space da cui prendere i dati.
+  *	@param	count: lunghezza del trasferimento richiesto.
+  * @param	ppos: puntatore alla posizione corrente nel file.
+  *	@retval	1 sempre.
+  */
+ssize_t APE_GPIOK_write(struct file *file, const char *buf, size_t count, loff_t *ppos){
+
+    loff_t offset;
+	struct APE_GPIOK_dev *APE_GPIOK_devp;
+	unsigned char value;
+	unsigned long *write_addr;
+
+    printk(KERN_INFO "APE_GPIOK_write\n");
+
+    APE_GPIOK_devp = file->private_data;
+	offset = APE_GPIOK_devp->current_pointer;
+	write_addr = (APE_GPIOK_devp->base_addr) + offset;
+
+    /* Trasferisce i dati allo spazio kernel*/
+    if(copy_from_user(&value, buf, count)){
+		return -EFAULT;
+	}
+
+	/* Completa la scrittura del dato*/
+	iowrite8(value, write_addr);
+	printk(KERN_INFO "Valore Scritto: %u\n",value);
+
+    /* Incrementa la posizione*/
+	*ppos = *ppos + 1;
+
+    return count;
+}
+
+/**
+  *	@brief	Verifica se un'operazione di read o write su uno o piu' file
+  *			descriptor sara' bloccante. Questa funzione deve:
+  *			- Chiamare poll_wait su una o piu' code;
+  *			- Restituire una maschera che indichi le operazioni che
   *			possono essere eseguite immediatamente senza essere bloccate.
   *	@param	file: puntatore alla struttura file
   *	@param	wait: puntatore poll_table, caricata assieme ad ogni coda che possa
@@ -221,20 +262,23 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
   */
 unsigned int APE_GPIOK_poll(struct file *file, poll_table *wait){
 
+	struct APE_GPIOK_dev *devp;
+	unsigned int mask;
+
 	printk(KERN_INFO "APE_GPIOK_poll\n");
 
-	struct APE_GPIOK_dev *devp = file->private_data;
-	unsigned int mask = 0;
+	devp = file->private_data;
+	mask = 0;
 
 	/* La poll_wait aggiunge una nuova coda di attesa alla poll_table*/
 	printk(KERN_INFO "Il processo %i (%s) viene bloccato\n",current->pid, current->comm);
-	poll_wait(file, &devp->poll_cond,  wait);
+	poll_wait(file, &devp->poll_queue,  wait);
 	printk(KERN_INFO "Il processo %i (%s) viene risvegliato\n",current->pid, current->comm);
 
 	/* Acquisisce il lock*/
 	spin_lock(&devp->read_flag_sl);
 
-	/* Verifica se il dato è pronto e setta la maschera*/
+	/* Verifica se il dato e' pronto e setta la maschera*/
 	if(devp->read_flag & EN_BLOC_READ){
 		/* Readable device*/
 		mask = POLLIN | POLLRDNORM;
@@ -246,45 +290,12 @@ unsigned int APE_GPIOK_poll(struct file *file, poll_table *wait){
 	return mask;
 }
 
-static int APE_GPIOK_Enable(unsigned long mask){
-	struct APE_GPIOK_dev *devp = APE_GPIOK_devp;
-	unsigned long *addr;
-
-	addr = devp -> base_addr + (APE_DIR_REG/4);
-	iowrite32(mask, addr);
-
-	return 1;
-}
-
-static int APE_GPIOK_Interrupt(unsigned long mask){
-	struct APE_GPIOK_dev *devp = APE_GPIOK_devp;
-	unsigned long *addr;
-
-	addr = devp -> base_addr + (APE_IERR_REG/4);
-	iowrite32(mask, addr);
-
-	addr = devp -> base_addr + (APE_IERF_REG/4);
-	iowrite32(mask, addr);
-
-	return 1;
-}
-
-static int APE_GPIOK_Ack_Interrupt(unsigned long mask){
-	struct APE_GPIOK_dev *devp = APE_GPIOK_devp;
-	unsigned long *addr;
-
-	addr = devp -> base_addr + (APE_ICRISR_REG/4);
-	iowrite32(mask, addr);
-
-	return 1;
-}
-
 /**
   *	@brief	ISR della periferica, le interrupt sono disabilitate durante la sua
   *			esecuzione (fast interrupt handler).
   *	@param	irq: interrupt number
   *	@param	regs: contiene uno snapshot del contesto del processore prima della ISR
-  *	@retval	Valore che indica se c'è stata effettivamente una interrupt da servire,
+  *	@retval	Valore che indica se c'e' stata effettivamente una interrupt da servire,
   			in caso affermativo deve valere IRQ_HANDLED altrimenti IRQ_NONE
   */
 static irqreturn_t APE_GPIOK_handler(int irq, struct pt_regs * regs){
@@ -292,40 +303,39 @@ static irqreturn_t APE_GPIOK_handler(int irq, struct pt_regs * regs){
 	unsigned long flags;
 
 	/* Disabilita le interruzioni*/
-	APE_GPIOK_Interrupt(0x0);
+	APE_GPIOK_writeIER(0x0);
 	printk(KERN_INFO "ISR in esecuzione\n");
 
-	/* Accesso al flag
-	abilitazione alla lettura ------------------------------*/
+	/* Accesso al flag abilitazione alla lettura ------------------------------*/
 
-	/* Acquisisce il lock e disabilita le interrupt, lo stato è salvato in flags*/
+	/* Acquisisce il lock e disabilita le interrupt, lo stato e' salvato in flags*/
 	spin_lock_irqsave(&APE_GPIOK_devp->read_flag_sl, flags);
 
-	/* Segnala che si può fare una lettura (sia sincrona che asincrona)*/
+	/* Ripristina flag di abilitazione alla lettura (sia sincrona che asincrona)*/
 	APE_GPIOK_devp->read_flag = EN_BLOC_READ | EN_NONBLOC_READ;
 
 	/* Rilascia il lock, riabilita le interrupt e rispristina lo stato*/
 	spin_unlock_irqrestore(&APE_GPIOK_devp->read_flag_sl, flags);
 
-	/* Accesso al contatore delle interrupt avvenute --------------------------*/
+	/* Accesso al contatore delle interrupt totali ----------------------------*/
 
-	/* Acquisisce il lock e disabilita le interrupt, lo stato è salvato in flags*/
-	spin_lock_irqsave(&APE_GPIOK_devp->iNumInterrupts_sl, flags);
+	/* Acquisisce il lock e disabilita le interrupt, lo stato e' salvato in flags*/
+	spin_lock_irqsave(&APE_GPIOK_devp->num_interrupts_sl, flags);
 
 	/* Incrementa il contatore delle interruzioni avvenute*/
-	APE_GPIOK_devp->iNumInterrupts = APE_GPIOK_devp->iNumInterrupts+1;
+	APE_GPIOK_devp->num_interrupts = APE_GPIOK_devp->num_interrupts+1;
 
 	/* Rilascia il lock, riabilita le interrupt e rispristina lo stato*/
-	spin_unlock_irqrestore(&APE_GPIOK_devp->iNumInterrupts_sl, flags);
+	spin_unlock_irqrestore(&APE_GPIOK_devp->num_interrupts_sl, flags);
 
 	/* Risveglio processi -----------------------------------------------------*/
 	printk(KERN_DEBUG "Processo %i (%s) risveglia i lettori...\n",current->pid, current->comm);
-	wake_up_interruptible(&APE_GPIOK_devp->read_cond);
-	wake_up(&APE_GPIOK_devp->poll_cond);
+	wake_up_interruptible(&APE_GPIOK_devp->read_queue);
+	wake_up(&APE_GPIOK_devp->poll_queue);
 
 	/* Riabilita le interrupt*/
-	APE_GPIOK_Ack_Interrupt(0xF);
-	APE_GPIOK_Interrupt(0xF);
+	APE_GPIOK_clearISR(0xF);
+	APE_GPIOK_writeIER(0xF);
 
 	printk(KERN_INFO "Interrupt Handler completa\n");
 
@@ -333,15 +343,16 @@ static irqreturn_t APE_GPIOK_handler(int irq, struct pt_regs * regs){
 }
 
 /**
-  *	@brief	Callback probe del platform driver
-  *	@param	TODO
-  *	@retval	TODO
+  *	@brief	Callback probe del platform driver, invocata quando il modulo viene inserito.
+  *	@param	op Puntatore a struttura platform_device cui l'oggetto myGPIOK_t si riferisce.
+  *	@retval	0 se completa con successo.
   */
 static int APE_GPIOK_probe(struct platform_device *op){
 
 	int rc;
 	int irq;
 	resource_size_t remap_size, phys_addr;
+	struct device *dev;
 
 	printk(KERN_INFO "APE_GPIOK_probe\n");
 
@@ -386,7 +397,7 @@ static int APE_GPIOK_probe(struct platform_device *op){
 	}
 
 	/* Richiesta e registrazione delle IRQ ------------------------------------*/
-	struct device *dev = &op->dev;
+	dev = &op->dev;
 
 	/* Parsing del DTB per ottenre per ottenere il numero della IRQ*/
 	irq = irq_of_parse_and_map(dev->of_node, 0);
@@ -435,19 +446,21 @@ static int APE_GPIOK_probe(struct platform_device *op){
 	/* Inizializzazione delle strutture ---------------------------------------*/
 
 	/* Wait queues*/
-	init_waitqueue_head(&APE_GPIOK_devp->read_cond);
-	init_waitqueue_head(&APE_GPIOK_devp->poll_cond);
+	init_waitqueue_head(&APE_GPIOK_devp->read_queue);
+	init_waitqueue_head(&APE_GPIOK_devp->poll_queue);
 
 	/* Spinlocks*/
 	spin_lock_init(&APE_GPIOK_devp->read_flag_sl);
-	spin_lock_init(&APE_GPIOK_devp->iNumInterrupts_sl);
+	spin_lock_init(&APE_GPIOK_devp->num_interrupts_sl);
 
 	APE_GPIOK_devp->read_flag = 0;
-	APE_GPIOK_devp->iNumInterrupts = 0;
+	APE_GPIOK_devp->num_interrupts = 0;
 
-	/* Interruzioni periferica*/
-	APE_GPIOK_Enable(0xF);//TODO per adesso lo piazzo qua
-	APE_GPIOK_Interrupt(0xF);
+	/* Setta la direzione dei pin della periferica*/
+	APE_GPIOK_setDIR(0x0F);//TODO per adesso lo piazzo qua
+
+	/* Abilita le interruzioni della periferica*/
+	APE_GPIOK_writeIER(0x0F);
 
 	printk(KERN_INFO "Inizializzazione driver completa\n");
 
@@ -479,12 +492,14 @@ static int APE_GPIOK_probe(struct platform_device *op){
   *	@retval	TODO
   */
 static int APE_GPIOK_remove(struct platform_device *op){
+
+	resource_size_t remap_size, phys_addr;
+
 	printk(KERN_INFO "APE_GPIOK_remove\n");
 
 	/* Disabilita le interrupt della periferica*/
-	APE_GPIOK_Interrupt(0x0);
+	APE_GPIOK_writeIER(0x0);
 
-	resource_size_t remap_size, phys_addr;
 	phys_addr = APE_GPIOK_devp->res.start;
 	remap_size = resource_size(&APE_GPIOK_devp->res);
 
@@ -519,6 +534,39 @@ static struct platform_driver APE_GPIOK_driver = {
 				.of_match_table = APE_GPIOK_match,
 		},
 };
+
+static int APE_GPIOK_setDIR(unsigned long mask){
+	struct APE_GPIOK_dev *devp = APE_GPIOK_devp;
+	unsigned long *addr;
+
+	addr = devp -> base_addr + (APE_DIR_REG/4);
+	iowrite32(mask, addr);
+
+	return 1;
+}
+
+static int APE_GPIOK_writeIER(unsigned long mask){
+	struct APE_GPIOK_dev *devp = APE_GPIOK_devp;
+	unsigned long *addr;
+
+	addr = devp -> base_addr + (APE_IERR_REG/4);
+	iowrite32(mask, addr);
+
+	addr = devp -> base_addr + (APE_IERF_REG/4);
+	iowrite32(mask, addr);
+
+	return 1;
+}
+
+static int APE_GPIOK_clearISR(unsigned long mask){
+	struct APE_GPIOK_dev *devp = APE_GPIOK_devp;
+	unsigned long *addr;
+
+	addr = devp -> base_addr + (APE_ICRISR_REG/4);
+	iowrite32(mask, addr);
+
+	return 1;
+}
 
 /**
   * @brief	Macro di definizione delle callback probe e remove. Implementa a sua
