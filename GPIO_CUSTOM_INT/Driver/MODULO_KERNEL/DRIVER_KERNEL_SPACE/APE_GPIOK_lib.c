@@ -12,10 +12,10 @@
   */
 
 /* Includes -------------------------------------------------------------------*/
-//#include "APE_GPIOK_includes.h"
+#include "APE_GPIOK_includes.h"
 
-extern int APE_GPIOK_setDIR(unsigned long mask){
-	APE_GPIOK_dev *devp = APE_GPIOK_devp;
+extern int APE_GPIOK_setDIR(APE_GPIOK_dev_t *APE_GPIOK_devp, unsigned long mask){
+	APE_GPIOK_dev_t *devp = APE_GPIOK_devp;
 	unsigned long *addr;
 
 	addr = devp -> base_addr + (APE_DIR_REG/4);
@@ -24,8 +24,8 @@ extern int APE_GPIOK_setDIR(unsigned long mask){
 	return 1;
 }
 
-extern int APE_GPIOK_writeIER(unsigned long mask){
-	APE_GPIOK_dev *devp = APE_GPIOK_devp;
+extern int APE_GPIOK_writeIER(APE_GPIOK_dev_t *APE_GPIOK_devp, unsigned long mask){
+	APE_GPIOK_dev_t *devp = APE_GPIOK_devp;
 	unsigned long *addr;
 
 	addr = devp -> base_addr + (APE_IERR_REG/4);
@@ -37,8 +37,8 @@ extern int APE_GPIOK_writeIER(unsigned long mask){
 	return 1;
 }
 
-extern int APE_GPIOK_clearISR(unsigned long mask){
-	APE_GPIOK_dev *devp = APE_GPIOK_devp;
+extern int APE_GPIOK_clearISR(APE_GPIOK_dev_t *APE_GPIOK_devp, unsigned long mask){
+	APE_GPIOK_dev_t *devp = APE_GPIOK_devp;
 	unsigned long *addr;
 
 	addr = devp -> base_addr + (APE_ICRISR_REG/4);

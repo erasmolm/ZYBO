@@ -14,6 +14,11 @@
 #ifndef APE_GPIOK_INCLUDES_H
 #define APE_GPIOK_INCLUDES_H
 
+/* Includes -------------------------------------------------------------------*/
+#include <linux/cdev.h> /* necessario per la cdev_init */
+#include <linux/of_irq.h>
+
+
 #define EN_BLOC_READ        1<<0
 #define EN_NONBLOC_READ     1<<1
 
@@ -30,9 +35,34 @@
 
 #define CURRENT_POINTER_OFF 0
 
-static int APE_GPIOK_setDIR(unsigned long mask);
-static int APE_GPIOK_writeIER(unsigned long mask);
-static int APE_GPIOK_clearISR(unsigned long mask);
+/**
+  * @brief	Tipo struttura del device
+  */
+typedef struct {
+	unsigned short current_pointer;	/*!< TODO*/
+	unsigned int size;				/*!< Dimensione della memoria da associare al device*/
+	struct resource res;			/*!< Struttura della risorsa device rappresentata in memoria, contiene start e end*/
+
+	struct cdev cdev;				/*!< Struttura char device interna al kernel*/
+	char name[20];					/*!< Nome del driver (DRIVER_NAME)*/
+	unsigned long *base_addr;		/*!< Indirizzo base*/
+
+	int irq_number;					/*!< Numero della linea di interrupt*/
+	wait_queue_head_t read_queue;	/*!< Variabile condition per la read*/
+	wait_queue_head_t poll_queue;	/*!< Variabile condition per la poll*/
+
+	spinlock_t num_interrupts_sl;	/*!< Variabile lock contatore delle interrupt*/
+	spinlock_t read_flag_sl;		/*!< Variabile lock per flag abilitazione lettura*/
+
+	int num_interrupts;				/*!< Contatore delle interruzioni avvenute*/
+	int read_flag;					/*!< Flag di abilitazione lettura*/
+
+}APE_GPIOK_dev_t;
+
+/* Prototipi delle funzioni --------------------------------------------------*/
+extern int APE_GPIOK_setDIR(APE_GPIOK_dev_t*, unsigned long mask);
+extern int APE_GPIOK_writeIER(APE_GPIOK_dev_t*, unsigned long mask);
+extern int APE_GPIOK_clearISR(APE_GPIOK_dev_t*, unsigned long mask);
 
 #endif /*APE_GPIOK_INCLUDES_H*/
 

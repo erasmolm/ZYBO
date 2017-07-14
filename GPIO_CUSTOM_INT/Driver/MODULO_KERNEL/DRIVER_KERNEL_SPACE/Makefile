@@ -1,5 +1,5 @@
 TARGET = APE_GPIOK
-OBJS = APE_GPIOK_main.o
+OBJS = APE_GPIOK_main.o APE_GPIOK_lib.o
 
 obj-m += $(TARGET).o
 $(TARGET)-y += $(OBJS)
