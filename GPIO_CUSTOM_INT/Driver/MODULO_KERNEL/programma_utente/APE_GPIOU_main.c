@@ -3,8 +3,30 @@
   * @file    APE_GPIOU_main.c
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V1.0
-  * @date    03-Luglio-2017
-  * @brief
+  * @date    16-Luglio-2017
+  * @brief	File che implementa il modulo KERNEL_USERSPACE
+  *	@addtogroup DRIVER
+  * @{
+  * @addtogroup KERNEL_USERSPACE
+  * @{
+  * @brief Programma userspace che utilizza le funzioni del modulo KERNEL.
+  * @details Il programma testa semplicemente le funzioni fornite dal driver
+  *			 kernel-space.
+  *			 Per questa particolare implementazione l'hardware è composto da 2
+  *			periferiche APE_GPIO, pertanto saranno presenti 2 file sotto /dev:
+  *			- /dev/APE_GPIO_0
+  *			- /dev/APE_GPIO_1
+  *			Su APE_GPIO_0 sono mappati gli switch sul primo nibble e i led sul secondo.
+  *			Su APE_GPIO_1 sono mappati solo i bottoni.
+  *			Il programma opera in due modalità:
+  *			- IN: viene effettuata una lettura interrompente sul dispositivo, in
+  *				uscita verra' riportato il valore del registro specificato da OFFSET.
+  *			- OUT: viene effettuata una scrittura del valore <VALUE> sul registro
+  *				indicato da OFFSET.
+  *			Le operazioni di lettura e scrittura sono eseguite mediante pread e pwrite.
+  *			Queste funzioni permettono di specificare un offset su cui spiazzare
+  *			l'operazione. L'utilizzo di queste due funzioni permette di non utilizzare
+  *			la funzione lseek, non presente nel modulo kernel.
   ******************************************************************************
   */
 
@@ -111,10 +133,11 @@ int main(int argc, char *argv[]){
   * @retval None
   */
 void usage(){
-	printf("\n\n *argv[0] -d <UIO_DEV_FILE> -i|-o \n");
-	printf("	-d				Device file. e.g. /dev/APE_GPIOK\n");
+	printf("\n\n *argv[0] -d <UIO_DEV_FILE> -i|-o <VALORE> | -p <OFFSET> \n");
+	printf("	-d				Device file. e.g. /dev/APE_GPIOK_0\n");
 	printf("	-i				Lettura dalla GPIO\n");
-	printf("	-o 				Scrittura verso la GPIO\n");
+	printf("	-o <VALORE>		Scrittura verso la GPIO\n");
+	printf("	-p <OFFSET>		Device file. e.g. /dev/APE_GPIOK_0\n");
 	return;
 }
 
@@ -132,3 +155,5 @@ void initScreen(void){
 	printf(" 	██║  ██║██║     ███████╗\n");
 	printf(" 	╚═╝  ╚═╝╚═╝     ╚══════╝\n\n\n");
 }
+/**@}*/
+/**@}*/
