@@ -41,12 +41,13 @@
 
 /* Macro ----------------------------------------------------------------------*/
 #define DRIVER_NAME     "APE_GPIOK"	/*!< Nome del driver*/
-#define NUM_APE_GPIOK_BANKS 1	/*!< Numero di device numbers contigui da assegnare*/
+#define MAX_NUM_DEVICES 10	/*!< Numero massimo device numbers contigui da assegnare*/
 
 /* Variabili Globali ----------------------------------------------------------*/
-static dev_t APE_GPIOK_dev_number;	/*!< Device number del dispositivo*/
-struct class *APE_GPIOK_class;
-APE_GPIOK_dev_t  *APE_GPIOK_devp;
+//static dev_t APE_GPIOK_dev_number;	/*!< Device number del dispositivo*/
+struct class *APE_GPIOK_class;			/*!< Classe del device*/
+APE_GPIOK_dev_t  **device_array; 		/*!< Array di device da caricare*/
+static int num_of_devices = 0;			/*!< Numero di device attualmente gestiti dal modulo*/
 
 /* Prototipi delle funzioni----------------------------------------------------*/
 static int APE_GPIOK_open(struct inode *, struct file *);
@@ -69,15 +70,16 @@ struct file_operations APE_GPIOK_fops = {
 };
 
 /**
-  * @brief	Stuttura che identifica il device nel device-tree.
+  * @brief	Stuttura che identifica tutti i device del DTB che matchano
+  *			la corrispondente stringa "compatible".
   */
 struct of_device_id APE_GPIOK_match[] = {
-	{.compatible = "APE_GPIOK"},	/*!< @note: La medesima stringa va copiata nel DTB*/
+	{.compatible = "APE_GPIOK"},	/*!< La medesima stringa va copiata nel DTB*/
 	{},
 };
 
 /**
-  * @brief	Comunica allo spazio utente quale device e' controllato dal modulo.
+  * @brief	Inserisce la entry del device nella tabella dei device gestita dal kernel.
   */
 MODULE_DEVICE_TABLE(of, APE_GPIOK_match);
 
@@ -103,8 +105,6 @@ int APE_GPIOK_open(struct inode *inode, struct file *file){
 	 */
 	file->private_data = APE_GPIOK_devp;
 
-	APE_GPIOK_devp->current_pointer = CURRENT_POINTER_OFF;
-
 	return 0;
 }
 
@@ -126,21 +126,21 @@ int APE_GPIOK_release(struct inode *inode, struct file *file){
   * @param	file: puntatore alla struttura file.
   *	@param	buf: puntatore al buffer user-space in cui trasferire i dati letti.
   *	@param	count: lunghezza del trasferimento richiesto.
-  * @param	ppos: puntatore alla posizione corrente nel file.
-  *	@retval	1 sempre.
+  * @param	ppos: puntatore alla posizione corrente nel file. Utilizzato come
+  *			offset da sommare all'indirizzo presso cui si vuole leggere.
+  *	@retval	1 in assenza di errori.
   */
 ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos){
 
-	loff_t offset;
-	APE_GPIOK_dev_t *APE_GPIOK_devp;
-	unsigned char value = 0; /* Valore letto dalla periferica*/
+	//loff_t offset;
+	APE_GPIOK_dev_t *devp;
+	unsigned int value = 0; /* Valore letto dalla periferica*/
 	unsigned long *read_addr;
 
 	printk(KERN_INFO "APE_GPIOK_read\n");
 
-	APE_GPIOK_devp = file->private_data;
-	offset = APE_GPIOK_devp->current_pointer;
-	read_addr = (APE_GPIOK_devp->base_addr) + offset;
+	devp = file->private_data;
+	read_addr = (devp->base_addr) + *ppos;
 
 	/* Effettua la lettura in base alla modalita' definita in f_flags*/
 	if((file->f_flags & O_NONBLOCK) == 0){
@@ -149,35 +149,34 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 
 		/* Effettua la wait sulla variabile condition*/
 		printk(KERN_INFO "Il processo %i (%s) viene bloccato in lettura\n",current->pid, current->comm);
-		wait_event_interruptible(APE_GPIOK_devp->read_queue, (APE_GPIOK_devp->read_flag & EN_BLOC_READ)==1);
+		wait_event_interruptible(devp->read_queue, (devp->read_flag & EN_BLOC_READ)== 1);
 		printk(KERN_INFO "Il processo %i (%s) viene risvegliato in lettura\n",current->pid, current->comm);
 
 		/* Acquisisci il lock*/
-		spin_lock(&APE_GPIOK_devp->read_flag_sl);
+		spin_lock(&devp->read_flag_sl);
 
 		/* Resetta il flag di abilitazione alla lettura*/
-		APE_GPIOK_devp->read_flag &= ~(EN_BLOC_READ);
+		devp->read_flag &= ~(EN_BLOC_READ);
 
 		/* Rilascia il lock*/
-		spin_unlock(&APE_GPIOK_devp->read_flag_sl);
+		spin_unlock(&devp->read_flag_sl);
 
 	} else {
 		/* Modalita' di lettura NON BLOCCANTE*/
 		printk(KERN_INFO "Lettura non bloccante\n");
 
 		/* Acquisisce il lock*/
-		spin_lock(&APE_GPIOK_devp->read_flag_sl);
+		spin_lock(&devp->read_flag_sl);
 
 		/* Resetta il flag di abilitazione alla lettura*/
-		APE_GPIOK_devp->read_flag &= ~(EN_NONBLOC_READ);
+		devp->read_flag &= ~(EN_NONBLOC_READ);
 
 		/* Rilascia il lock*/
-		spin_unlock(&APE_GPIOK_devp->read_flag_sl);
+		spin_unlock(&devp->read_flag_sl);
 	}
 
 	/* Completa la lettura del dato*/
-	//TODO ioread32 prova
-	value = ioread8(read_addr);
+	value = ioread32(read_addr);
 	printk(KERN_INFO "Valore Letto: %u\n",value);
 
 	/* Incrementa la posizione*/
@@ -188,7 +187,7 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 		return -EFAULT;
 	}
 
-	return 1;//TODO migliorare la logica
+	return 1;
 }
 
 /**
@@ -196,21 +195,20 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
   * @param	file: puntatore alla struttura file.
   *	@param	buf: puntatore al buffer user-space da cui prendere i dati.
   *	@param	count: lunghezza del trasferimento richiesto.
-  * @param	ppos: puntatore alla posizione corrente nel file.
-  *	@retval	1 sempre.
+  * @param	ppos: ppos: puntatore alla posizione corrente nel file. Utilizzato come
+  *			offset da sommare all'indirizzo presso cui si vuole scrivere.
+  *	@retval	1 in assenza di errori.
   */
 ssize_t APE_GPIOK_write(struct file *file, const char *buf, size_t count, loff_t *ppos){
 
-    loff_t offset;
-	APE_GPIOK_dev_t *APE_GPIOK_devp;
+	APE_GPIOK_dev_t *devp;
 	unsigned char value;
 	unsigned long *write_addr;
 
     printk(KERN_INFO "APE_GPIOK_write\n");
 
-    APE_GPIOK_devp = file->private_data;
-	offset = APE_GPIOK_devp->current_pointer;
-	write_addr = (APE_GPIOK_devp->base_addr) + offset;
+    devp = file->private_data;
+	write_addr = (devp->base_addr) + *ppos;
 
     /* Trasferisce i dati allo spazio kernel*/
     if(copy_from_user(&value, buf, count)){
@@ -218,7 +216,7 @@ ssize_t APE_GPIOK_write(struct file *file, const char *buf, size_t count, loff_t
 	}
 
 	/* Completa la scrittura del dato*/
-	iowrite8(value, write_addr);
+	iowrite32(value, write_addr);
 	printk(KERN_INFO "Valore Scritto: %u\n",value);
 
     /* Incrementa la posizione*/
@@ -271,6 +269,9 @@ unsigned int APE_GPIOK_poll(struct file *file, poll_table *wait){
 /**
   *	@brief	ISR della periferica, le interrupt sono disabilitate durante la sua
   *			esecuzione (fast interrupt handler).
+  * @details Si fa notare che la periferica e' progettata in modo tale che, se la direzione
+  *			 e' impostata in scrittura sul pad, non vengono mai sollevate eccezioni.
+  *			Dunque e' possibile evitare di restituire IRQ_NONE secondo la convenzione.
   *	@param	irq: interrupt number
   *	@param	regs: contiene uno snapshot del contesto del processore prima della ISR
   *	@retval	Valore che indica se c'e' stata effettivamente una interrupt da servire,
@@ -279,41 +280,53 @@ unsigned int APE_GPIOK_poll(struct file *file, poll_table *wait){
 static irqreturn_t APE_GPIOK_handler(int irq, struct pt_regs * regs){
 
 	unsigned long flags;
+	int i;
+	IER_status_t int_status;
+	APE_GPIOK_dev_t *devp;
+
+	/* identifica il device mediante la linea irq*/
+	for(i = 0; i < num_of_devices; i++){
+		if(device_array[i]->irq_number == irq){
+			devp = device_array[i];
+			break;
+		}
+	}
 
 	/* Disabilita le interruzioni*/
-	APE_GPIOK_writeIER(APE_GPIOK_devp,0x0);
+	APE_GPIOK_saveInt(devp,&int_status);
+	APE_GPIOK_writeIER(devp,0x0);
 	printk(KERN_INFO "ISR in esecuzione\n");
 
 	/* Accesso al flag abilitazione alla lettura ------------------------------*/
 
 	/* Acquisisce il lock e disabilita le interrupt, lo stato e' salvato in flags*/
-	spin_lock_irqsave(&APE_GPIOK_devp->read_flag_sl, flags);
+	spin_lock_irqsave(&devp->read_flag_sl, flags);
 
 	/* Ripristina flag di abilitazione alla lettura (sia sincrona che asincrona)*/
-	APE_GPIOK_devp->read_flag = EN_BLOC_READ | EN_NONBLOC_READ;
+	devp->read_flag = EN_BLOC_READ | EN_NONBLOC_READ;
 
 	/* Rilascia il lock, riabilita le interrupt e rispristina lo stato*/
-	spin_unlock_irqrestore(&APE_GPIOK_devp->read_flag_sl, flags);
+	spin_unlock_irqrestore(&devp->read_flag_sl, flags);
 
 	/* Accesso al contatore delle interrupt totali ----------------------------*/
 
 	/* Acquisisce il lock e disabilita le interrupt, lo stato e' salvato in flags*/
-	spin_lock_irqsave(&APE_GPIOK_devp->num_interrupts_sl, flags);
+	spin_lock_irqsave(&devp->num_interrupts_sl, flags);
 
 	/* Incrementa il contatore delle interruzioni avvenute*/
-	APE_GPIOK_devp->num_interrupts = APE_GPIOK_devp->num_interrupts+1;
+	devp->num_interrupts = devp->num_interrupts+1;
 
 	/* Rilascia il lock, riabilita le interrupt e rispristina lo stato*/
-	spin_unlock_irqrestore(&APE_GPIOK_devp->num_interrupts_sl, flags);
+	spin_unlock_irqrestore(&devp->num_interrupts_sl, flags);
 
 	/* Risveglio processi -----------------------------------------------------*/
 	printk(KERN_DEBUG "Processo %i (%s) risveglia i lettori...\n",current->pid, current->comm);
-	wake_up_interruptible(&APE_GPIOK_devp->read_queue);
-	wake_up(&APE_GPIOK_devp->poll_queue);
+	wake_up_interruptible(&devp->read_queue);
+	wake_up(&devp->poll_queue);
 
 	/* Riabilita le interrupt*/
-	APE_GPIOK_clearISR(APE_GPIOK_devp,0xF);
-	APE_GPIOK_writeIER(APE_GPIOK_devp,0xF);
+	APE_GPIOK_clearISR(devp,APE_INT_MASK);
+	APE_GPIOK_restoreInt(devp,&int_status);
 
 	printk(KERN_INFO "Interrupt Handler completa\n");
 
@@ -322,180 +335,215 @@ static irqreturn_t APE_GPIOK_handler(int irq, struct pt_regs * regs){
 
 /**
   *	@brief	Callback probe del platform driver, invocata quando il modulo viene inserito.
-  *	@param	op Puntatore a struttura platform_device cui l'oggetto myGPIOK_t si riferisce.
+  *	@param	op Puntatore a struttura platform_device cui l'oggetto APE_GPIOK_dev_t si riferisce.
   *	@retval	0 se completa con successo.
   */
 static int APE_GPIOK_probe(struct platform_device *op){
 
-	int rc;
+	int i;
+	int status;
 	int irq;
-	resource_size_t remap_size, phys_addr;
+
+	APE_GPIOK_dev_t *devp;
 	struct device *dev;
 
-	printk(KERN_INFO "APE_GPIOK_probe\n");
+	printk(KERN_INFO "APE_GPIOK_probe %d\n", num_of_devices);
 
-	APE_GPIOK_devp = kmalloc(sizeof(APE_GPIOK_dev_t), GFP_KERNEL);
-	if (!APE_GPIOK_devp)
+    /* Alla prima chiamata di probe, bisogna inizializzare un array di device*/
+    if(num_of_devices == 0){
+        device_array = kmalloc(MAX_NUM_DEVICES*sizeof(APE_GPIOK_dev_t), GFP_KERNEL);
+        if (!device_array)
+    	{
+    		printk(KERN_ERR "Kmalloc fallita per inizializzazione dell'array\n");
+    		return -ENOMEM;
+    	}
+		printk(KERN_INFO "Kmalloc riuscita per inizializzazione dell'array\n");
+
+		for (i=0; i < MAX_NUM_DEVICES; i++){
+			device_array[i] = NULL;
+		}
+
+		/* Creazione della classe del device --------------------------------------*/
+		APE_GPIOK_class = class_create(THIS_MODULE, DRIVER_NAME);
+		if(!APE_GPIOK_class){
+			printk(KERN_ERR "Creazione classe del device fallita\n");
+			kfree(device_array);
+			return -EFAULT;
+		}
+	    printk(KERN_INFO "Creazione classe del device riuscita\n");
+    }
+
+	/* Inizializzazione la struttura dell'i-esimo device*/
+	devp = kmalloc(sizeof(APE_GPIOK_dev_t), GFP_KERNEL);
+	if (!devp)
 	{
-		printk(KERN_INFO "Kmalloc fallita\n");
+		printk(KERN_ERR "Kmalloc della struttura APE_GPIOK_dev_t fallita\n");
 		return -ENOMEM;
 	}
-
-	/* Inizializzazione e registrazione del device a caratteri*/
-	cdev_init(&APE_GPIOK_devp->cdev, &APE_GPIOK_fops);
-	APE_GPIOK_devp->cdev.owner = THIS_MODULE;
+	printk(KERN_INFO "Kmalloc della struttura APE_GPIOK_dev_t riuscita\n");
 
 	/* Delega al kernel l'assegnazione dei device numbers*/
-	rc = alloc_chrdev_region(&APE_GPIOK_dev_number, 0, NUM_APE_GPIOK_BANKS, DRIVER_NAME);
-	if(rc){
-		printk(KERN_INFO "Assegnazione device numbers fallita\n");
-		goto out_bof_maj;
+	status = alloc_chrdev_region(&devp->dev_num, 0, 1, DRIVER_NAME);
+	if(status){
+		printk(KERN_ERR "Assegnazione device numbers fallita\n");
+		goto err_chrdev_region;
 	}
+    printk(KERN_INFO "<M,m>: <%d, %d>\n", MAJOR(devp->dev_num), MINOR(devp->dev_num));
+
+	/* Inizializzazione e registrazione del device a caratteri*/
+	cdev_init(&devp->cdev, &APE_GPIOK_fops);
+	devp->cdev.owner = THIS_MODULE;
+
+	if (device_create(APE_GPIOK_class, NULL, devp->dev_num ,NULL, "APE_GPIOK_%d",num_of_devices) == NULL){
+		printk(KERN_ERR "Creazione del device %d fallita\n",num_of_devices);
+		status = -EFAULT;
+		goto err_device_create;
+	}
+    printk(KERN_INFO "Creazione del device %d riuscita\n",num_of_devices);
 
 	/* Registra presso il kernel la struttura cdev precedentemente inizializzata*/
-	rc = cdev_add(&APE_GPIOK_devp->cdev, APE_GPIOK_dev_number, 1);
-	if(rc)
-	{
-		printk(KERN_INFO "Registrazione cdev fallita\n");
-		goto out_bof_cdev;
+	status = cdev_add(&devp->cdev, devp->dev_num, 1);
+	if(status){
+		printk(KERN_ERR "Registrazione cdev fallita\n");
+		goto err_cdev_add;
 	}
+    printk(KERN_INFO "Registrazione cdev riuscita\n");
 
-	/* Creazione della classe del device --------------------------------------*/
-	APE_GPIOK_class = class_create(THIS_MODULE, DRIVER_NAME);
-	if(!APE_GPIOK_class){
-		printk(KERN_INFO "Creazione classe del device fallita\n");
-		rc = -EFAULT;
-		goto out_bof_class;
-	}
-
-	if (device_create(APE_GPIOK_class, NULL, APE_GPIOK_dev_number ,NULL, "APE_GPIOK") == NULL){
-		printk(KERN_INFO "Creazione del device fallita\n");
-		rc = -EFAULT;
-		goto out_bof_dcrt;
-	}
-
-	/* Richiesta e registrazione delle IRQ ------------------------------------*/
 	dev = &op->dev;
 
-	/* Parsing del DTB per ottenre per ottenere il numero della IRQ*/
-	irq = irq_of_parse_and_map(dev->of_node, 0);
-
-	printk(KERN_INFO "Assegnazione della linea di interruzione %d\n",irq);
-	APE_GPIOK_devp->irq_number=irq;
-
-	/* Registrazione dell'IRQ handler, usa le fast interrupt*/
-	rc= request_irq(irq,(irq_handler_t) APE_GPIOK_handler, 0, DRIVER_NAME, NULL);
-	if(rc){
-		printk(KERN_INFO "Registrazione linea interrupt fallita %d\n",irq);
-		goto out_bof_int;
+	/* Popola la struttura res del device*/
+	status = of_address_to_resource(dev->of_node, 0, &devp->res);
+	if (status){
+		printk(KERN_ERR "Chiamata a of_address_to_resource fallita\n");
+		goto err_addr;
 	}
-
-	rc = of_address_to_resource(dev->of_node, 0, &APE_GPIOK_devp->res);
-	if (rc){
-		printk(KERN_INFO "Impossibile ottenere la risorsa device\n");
-		goto out_bof_addr;
-	}
-
-	/* Allocazione memoria I/O ------------------------------------------------*/
+    printk(KERN_INFO "Chiamata a of_address_to_resource riuscita\n");
 
 	/* Alloca area di memoria di dimensione size*/
-	APE_GPIOK_devp->size = APE_GPIOK_devp->res.end - APE_GPIOK_devp->res.start + 1;
+	devp->size = devp->res.end - devp->res.start + 1;
 
 	/* Richiesta area di memoria*/
-	if  (!request_mem_region(APE_GPIOK_devp->res.start, APE_GPIOK_devp->size, DRIVER_NAME)){
-		printk(KERN_INFO "Allocazione memoria fallita\n");
-		rc = -ENOMEM;
-		goto out_bof_nomem;
+	if  (!request_mem_region(devp->res.start, devp->size, DRIVER_NAME)){
+		printk(KERN_ERR "Allocazione memoria fallita\n");
+		status = -ENOMEM;
+		goto err_req_mem;
 	}
 	printk(KERN_INFO "Allocazione memoria riuscita\n");
 
-	phys_addr = APE_GPIOK_devp->res.start;
-	remap_size = resource_size(&APE_GPIOK_devp->res);
-
 	/* Mapping: assegna indirizzi virtuali alla memoria I/O allocata*/
-	APE_GPIOK_devp->base_addr = ioremap(APE_GPIOK_devp->res.start, APE_GPIOK_devp->size);
-	if (APE_GPIOK_devp->base_addr == NULL) {
-		printk(KERN_INFO "Mapping indirizzi virtuali fallito\n");
-		rc = -ENOMEM;
-		goto out_bof_remap;
+	devp->base_addr = ioremap(devp->res.start, devp->size);
+	if (devp->base_addr == NULL) {
+		printk(KERN_ERR "Mapping indirizzi virtuali fallito\n");
+		status = -ENOMEM;
+		goto err_ioremap;
 	}
 	printk(KERN_INFO "Mapping indirizzi virtuali riuscito\n");
 
+	/* Parsing del DTB per ottenere per ottenere il numero della IRQ*/
+	irq = irq_of_parse_and_map(dev->of_node, 0);
+	devp->irq_number=irq;
+
+	/* Registrazione dell'IRQ handler, usa le fast interrupt*/
+	status= request_irq(irq,(irq_handler_t) APE_GPIOK_handler, 0, DRIVER_NAME, NULL);
+	if(status){
+		printk(KERN_ERR "Registrazione linea interrupt fallita %d\n",irq);
+		goto err_req_int;
+	}
+    printk(KERN_INFO "Registrazione linea interrupt riuscita %d\n",irq);
+
 	/* Inizializzazione delle strutture ---------------------------------------*/
 
+	/* Associa la struttura platform device al device che si sta inizializzando*/
+	devp->op = op;
+
 	/* Wait queues*/
-	init_waitqueue_head(&APE_GPIOK_devp->read_queue);
-	init_waitqueue_head(&APE_GPIOK_devp->poll_queue);
+	init_waitqueue_head(&devp->read_queue);
+	init_waitqueue_head(&devp->poll_queue);
 
 	/* Spinlocks*/
-	spin_lock_init(&APE_GPIOK_devp->read_flag_sl);
-	spin_lock_init(&APE_GPIOK_devp->num_interrupts_sl);
+	spin_lock_init(&devp->read_flag_sl);
+	spin_lock_init(&devp->num_interrupts_sl);
 
-	APE_GPIOK_devp->read_flag = 0;
-	APE_GPIOK_devp->num_interrupts = 0;
+	devp->read_flag = 0;
+	devp->num_interrupts = 0;
 
-	/* Setta la direzione dei pin della periferica*/
-	APE_GPIOK_setDIR(APE_GPIOK_devp,0x0F);//TODO per adesso lo piazzo qua
+	/* Aggiunge il device all'array*/
+	device_array[num_of_devices] = devp;
 
-	/* Abilita le interruzioni della periferica*/
-	APE_GPIOK_writeIER(APE_GPIOK_devp,0x0F);
+	/* Incrementa il numero di device*/
+    num_of_devices = num_of_devices + 1;
 
-	printk(KERN_INFO "Inizializzazione driver completa\n");
+	printk(KERN_INFO "APE_GPIOK_probe %d terminata\n",num_of_devices-1);
 
 	return 0;
 
 	/* Gestione errori --------------------------------------------------------*/
-	out_bof_remap:
-		release_mem_region(APE_GPIOK_devp->res.start, APE_GPIOK_devp->size);
-	out_bof_nomem:
+	    free_irq(irq, NULL);
+	err_req_int:
+	    iounmap(devp->base_addr);
+	err_ioremap:
+	    release_mem_region(devp->res.start, devp->size);
+	err_req_mem:
+	    /* Solo of_address_to_resource*/
+	err_addr:
+	    cdev_del(&devp->cdev);
+	err_cdev_add:
+	    device_destroy(APE_GPIOK_class, devp->dev_num);
+	err_device_create:
+	    unregister_chrdev_region(devp->dev_num, 1);
+	err_chrdev_region:
+	    kfree(devp);
 
-	out_bof_addr:
-		free_irq(irq, NULL);
-	out_bof_int:
-		device_destroy(APE_GPIOK_class, APE_GPIOK_dev_number);
-	out_bof_dcrt:
-		cdev_del(&APE_GPIOK_devp->cdev);
-	out_bof_cdev:
-		class_destroy(APE_GPIOK_class);
-	out_bof_class:
-		unregister_chrdev_region(APE_GPIOK_dev_number, NUM_APE_GPIOK_BANKS);
-	out_bof_maj:
-		kfree(APE_GPIOK_devp);
-		return rc;
+	return status;
 }
 
 /**
   *	@brief	Callback remove del platform driver
-  *	@param	TODO
-  *	@retval	TODO
+  *	@param	op Puntatore a struttura platform_device cui l'oggetto APE_GPIOK_dev_t si riferisce.
+  *	@retval	0
   */
 static int APE_GPIOK_remove(struct platform_device *op){
 
-	resource_size_t remap_size, phys_addr;
+	int i;
+	APE_GPIOK_dev_t *devp;
 
-	printk(KERN_INFO "APE_GPIOK_remove\n");
+	printk(KERN_INFO "APE_GPIOK_remove %d iniziata\n",num_of_devices);
 
-	/* Disabilita le interrupt della periferica*/
-	APE_GPIOK_writeIER(APE_GPIOK_devp,0x0);
-
-	phys_addr = APE_GPIOK_devp->res.start;
-	remap_size = resource_size(&APE_GPIOK_devp->res);
-
-	/* Effettua l'unmap dello spazio di memoria I/O*/
-	iounmap(APE_GPIOK_devp->base_addr);
-	release_mem_region(APE_GPIOK_devp->res.start, APE_GPIOK_devp->size);
+	/* Trova la struttura del device da rimuovere*/
+	for(i = 0;i < MAX_NUM_DEVICES; i++){
+		if(device_array[i]->op == op){
+			devp = device_array [i];
+			break;
+		}
+	}
 
 	/* Rilascia le linee di interrupt*/
-	free_irq(APE_GPIOK_devp->irq_number, NULL);
+	free_irq(devp->irq_number, NULL);
 
-	/* Dealloca la classe*/
-	device_destroy(APE_GPIOK_class, APE_GPIOK_dev_number);
-	class_destroy(APE_GPIOK_class);
+	/* Effettua l'unmap dello spazio di memoria I/O*/
+	iounmap(devp->base_addr);
+	release_mem_region(devp->res.start, devp->size);
 
-	/* Rimuove il device dal sistema*/
-	cdev_del(&APE_GPIOK_devp->cdev);
-	unregister_chrdev_region(APE_GPIOK_dev_number, NUM_APE_GPIOK_BANKS);
-	kfree(APE_GPIOK_devp);
+	cdev_del(&devp->cdev);
+
+	device_destroy(APE_GPIOK_class, devp->dev_num);
+
+	/* Rilascia il device number*/
+	unregister_chrdev_region(devp->dev_num, 1);
+
+	/* Libera lo spazio di memoria*/
+	kfree(devp);
+
+    /* Alla cancellazione dell'ultimo device*/
+    if(num_of_devices == 0){
+		class_destroy(APE_GPIOK_class);
+	    kfree(device_array);
+    } else{
+        /* Decrementa il numero di device*/
+        num_of_devices = num_of_devices - 1;
+    }
+
+	printk(KERN_INFO "APE_GPIOK_remove terminata %d\n",num_of_devices+1);
 
 	return  0;
 }

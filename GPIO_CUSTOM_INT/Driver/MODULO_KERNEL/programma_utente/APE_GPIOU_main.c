@@ -21,6 +21,7 @@
 #include <poll.h>
 #include <inttypes.h>
 
+
 /* Typedef -------------------------------------------------------------------*/
 typedef enum {
 	IN,		/*!< Modalità in lettura dalla GPIO */
@@ -37,11 +38,12 @@ int main(int argc, char *argv[]){
 	int direction=IN;
 	char *dev;
     uint32_t value = 0;
+    uint32_t pos = 0;
 	ssize_t nb;
 
 	initScreen();
 
-	while((c = getopt(argc, argv, "d:ioh")) != -1) {
+	while((c = getopt(argc, argv, "d:io:p:h")) != -1) {
 		switch(c) {
 		case 'd':
 			dev=optarg;
@@ -51,6 +53,10 @@ int main(int argc, char *argv[]){
 			break;
 		case 'o':
 			direction=OUT;
+			value = strtoul(optarg, NULL, 0);
+			break;
+		case 'p':
+			pos = strtoul(optarg, NULL, 0);
 			break;
 		case 'h':
 			usage();
@@ -63,7 +69,7 @@ int main(int argc, char *argv[]){
 
 	}
 
-	/* Open the device file */
+	/* Apre il device file */
 	fd = open(dev, O_RDWR);
 	if (fd < 1) {
 		perror(argv[0]);
@@ -74,36 +80,26 @@ int main(int argc, char *argv[]){
 
 	/* Lettura generica dalla GPIO */
 	if (direction == IN) {
+
 		printf("\n\n Modalità IN \n\n");
-        fflush(stdout);
 
-		for(;;){
+		/* Attendi interrupt */
+		nb = pread(fd, &value, sizeof(value),(off_t)pos);
 
-			/* Attendi interrupt */
-			nb = read(fd, &value, sizeof(value));
-
-			if (nb > 0) {
-
-				printf("Input: %8x\n",value);
-                fflush(stdout);
-			}
+		if (nb > 0) {
+			printf("Input: %8x\n",value);
+			fflush(stdout);
 		}
+
 	}
 
 	/* Scrittura generica verso la GPIO */
 	if(direction == OUT) {
 		printf("\n\n Modalità OUT\n\n");
-		fflush(stdout);
 
-		printf("Inserire un valore: ");
-		while(scanf(" %8x",&value) == 1){
-			nb = write(fd, &value, sizeof(value));
+		nb = pwrite(fd,(const void*)&value, sizeof(uint32_t), (off_t)pos);
 
-			if (nb > 0) {
-				printf("Valore inserito: %8x\n",value);
-			}
-			printf("\nInserire un valore: ");
-		}
+		printf("Valore inserito: %8x\n",value);
 	}
 
 	return 0;
