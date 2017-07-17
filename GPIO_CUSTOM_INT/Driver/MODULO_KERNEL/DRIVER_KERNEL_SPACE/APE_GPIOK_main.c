@@ -3,11 +3,25 @@
   * @file    APE_GPIOK_main.c
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V1.0
-  * @date    08-Luglio-2017
+  * @date    13-Luglio-2017
+  * @brief	File che implementa il modulo KERNEL.
   *	@addtogroup DRIVER
   * @{
   * @addtogroup KERNEL
   * @{
+  * @brief Modulo kernel per la periferica APE_GPIOK.
+  * @details Il modulo esporta le principali funzioni che devono essere fornite
+  *			di norma da un modulo kernel.
+  *			Il driver istanzia tanti device file sotto /dev quante sono le periferiche
+  *			collegate e compatibili al modulo (come dichiarato nel device tree).
+  *			Un primo limite del modulo sta nel numero di periferiche gestibili,
+  *			limitato dalla macro MAX_NUM_DEVICES.
+  *			I device sono gestiti come device a carattere e sono mantenuti in
+  *			memoria mediante un array di puntatori a struttura APE_GPIOK_dev_t.
+  *			L'array viene inizializzato alla prima chiamata della funzione probe,
+  *			che avviene ogni volta che un device viene caricato. Per le successive chiamata,
+  *			la funzione probe di occupa solo di creare una nuova struttura e associarla
+  *			all'array.
   ******************************************************************************
   */
 
@@ -34,9 +48,6 @@
 #include <linux/interrupt.h>
 #include <linux/device.h>
 
-//#include <linux/of_irq.h>
-//#include <linux/cdev.h> /* necessario per la cdev_init */
-
 #include "APE_GPIOK_includes.h"
 
 /* Macro ----------------------------------------------------------------------*/
@@ -44,7 +55,6 @@
 #define MAX_NUM_DEVICES 10	/*!< Numero massimo device numbers contigui da assegnare*/
 
 /* Variabili Globali ----------------------------------------------------------*/
-//static dev_t APE_GPIOK_dev_number;	/*!< Device number del dispositivo*/
 struct class *APE_GPIOK_class;			/*!< Classe del device*/
 APE_GPIOK_dev_t  **device_array; 		/*!< Array di device da caricare*/
 static int num_of_devices = 0;			/*!< Numero di device attualmente gestiti dal modulo*/
@@ -84,7 +94,8 @@ struct of_device_id APE_GPIOK_match[] = {
 MODULE_DEVICE_TABLE(of, APE_GPIOK_match);
 
 /**
-  * @brief	Inizializza tutte le strutture utilizzate dal driver.
+  * @brief	Apre il file specifico del device e collega la struttura dati del device
+  *			al campo private date del descrittore del file.
   *	@param	inode: puntatore struttura inode che contiene il campo i_cdev
   *	@param	file: puntatore struttura file per accedere ai private_date
   *	@retval	0 sempre
@@ -109,7 +120,7 @@ int APE_GPIOK_open(struct inode *inode, struct file *file){
 }
 
 /**
-  * @brief	Dealloca tutte le strutture inizializzate dalla open.
+  * @brief	Dealloca tutte le strutture inizializzate dalla open. In questo caso non fa niente.
   *	@param	inode: puntatore struttura inode che contiene il campo i_cdev
   *	@param	file: puntatore struttura file per accedere ai private_date
   *	@retval	0 sempre
@@ -123,6 +134,14 @@ int APE_GPIOK_release(struct inode *inode, struct file *file){
 
 /**
   *	@brief	Trasferisce dati dal device verso un buffer user-space.
+  *	@details Permette di realizzare sia una lettura bloccante, che prevede la sospensione del processo,
+  *			che non bloccante. Cio' e' gestito con l'apposito flag read_flag della struttura dati del device.
+  *			La funzione read, una volta effettuata la lettura, deve sempre incrementare
+  *			il valore ppos, che specifica la posizione all'interno del file da cui partirà
+  *			una nuova operazione. In questo caso ppos e' utilizzato come offset da sommare
+  *			all'indirizzo base del device e viene incrementato alla chiusura.
+  *			Qualora si volesse invocare la pread, il kernel ignorerebbe qualsiasi cambiamento
+  *			fatto da questa funzione su campo ppos.
   * @param	file: puntatore alla struttura file.
   *	@param	buf: puntatore al buffer user-space in cui trasferire i dati letti.
   *	@param	count: lunghezza del trasferimento richiesto.
@@ -192,6 +211,8 @@ ssize_t APE_GPIOK_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 
 /**
   *	@brief	Trasferisce dati buffer user-space al device.
+  * @details Come per la funzione di read, anche la write incremente il valore di ppos,
+  *			che viene ignorato dal kernel qualora si usi la pwrite al livello utente.
   * @param	file: puntatore alla struttura file.
   *	@param	buf: puntatore al buffer user-space da cui prendere i dati.
   *	@param	count: lunghezza del trasferimento richiesto.

@@ -3,7 +3,8 @@
   * @file    APE_GPIOK_defines.h
   * @author  Alfonso,Pierluigi,Erasmo (APE)
   * @version V1.0
-  * @date    08-Luglio-2017
+  * @date    13-Luglio-2017
+  * @brief	File di definizioni per il modulo KERNEL
   *	@addtogroup DRIVER
   * @{
   * @addtogroup KERNEL
@@ -19,8 +20,8 @@
 #include <linux/of_irq.h>
 
 
-#define EN_BLOC_READ        1<<0
-#define EN_NONBLOC_READ     1<<1
+#define EN_BLOC_READ        1<<0	/*!< Flag di abilitazione alla lettura bloccante*/
+#define EN_NONBLOC_READ     1<<1	/*!< Flag di abilitazione alla lettura non bloccante*/
 
 #define APE_DATA_REG		0	/*!< offset registro dato*/
 #define APE_DIR_REG			4 	/*!< offset registro direzione (W)*/
